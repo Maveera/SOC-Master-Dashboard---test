@@ -1261,6 +1261,13 @@ th {
   text-align: center;
   margin-left: 0 !important;
   margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+#reportRoot .page.slide-eps-trend-plot {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .eps-grid {
@@ -1268,6 +1275,14 @@ th {
   grid-template-columns: 42% 58%;
   gap: 10px;
   align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.slide-eps-trend-plot.slide-fill .eps-grid {
+  flex: 1 1 0;
+  min-height: 0;
+  height: auto;
 }
 
 .slide-eps-trend-plot .eps-grid {
@@ -1277,49 +1292,78 @@ th {
 .slide-eps-trend-plot .eps-left-card,
 .slide-eps-trend-plot .eps-right-card {
   height: 100%;
+  min-height: 0;
 }
 
 .slide-eps-trend-plot .eps-left-card .totpot-ss1-frame {
   height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  padding: 4px 8px 2px;
+}
+
+.slide-eps-trend-plot .eps-left-card .totpot-ss1-frame > .totpot-data-table {
+  flex: 0 0 auto;
+  width: 100%;
+  font-size: 0.78rem;
+  line-height: 1.15;
+}
+
+.slide-eps-trend-plot .eps-left-card .totpot-data-table th,
+.slide-eps-trend-plot .eps-left-card .totpot-data-table td {
+  padding: 2px 8px;
+  border: 1px solid #dddddd;
 }
 
 .eps-left-chart-wrap {
+  flex: 1 1 0;
+  min-height: 160px;
   height: auto;
-  flex: 1 1 auto;
   width: 100%;
   position: relative;
   background: #fff;
+}
+
+.slide-eps-trend-plot .eps-left-chart-wrap canvas,
+.slide-eps-trend-plot .eps-right-chart-wrap canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .eps-right-frame {
   background: #efefef;
   height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  padding: 4px 8px 2px;
+  box-sizing: border-box;
 }
 
 .eps-right-chart-wrap {
+  flex: 1 1 0;
+  min-height: 0;
   height: auto;
-  min-height: 260px;
   width: 100%;
   position: relative;
   background: #efefef;
-  flex: 0 0 58%;
 }
 
 .eps-hosts-legend {
-  margin-top: 8px;
+  flex: 0 0 auto;
+  margin-top: 6px;
   background: #fff;
   border: 1px solid #d5d5d5;
-  padding: 8px 10px 6px;
+  padding: 6px 8px 4px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px 10px;
-  font-size: 0.82rem;
-  line-height: 1.2;
-  flex: 1 1 auto;
+  font-size: 0.78rem;
+  line-height: 1.15;
 }
 
 .eps-host-item {
@@ -2387,6 +2431,13 @@ th {
   }
 
   body.report-pdf-export #reportRoot .page.slide-tfpos-alerts {
+    height: 540px !important;
+    min-height: 540px !important;
+    max-height: 540px !important;
+    overflow: hidden !important;
+  }
+
+  body.report-pdf-export #reportRoot .page.slide-eps-trend-plot {
     height: 540px !important;
     min-height: 540px !important;
     max-height: 540px !important;

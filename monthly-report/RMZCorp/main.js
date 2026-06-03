@@ -165,8 +165,9 @@ function syncAllSlideLayoutsForExport() {
   if (truePositiveAlertsChart || falsePositiveAlertsChart) {
     syncTfPosSlideLayout();
   }
-  if (epsTotalChart) epsTotalChart.resize();
-  if (epsTopHostsChart) epsTopHostsChart.resize();
+  if (epsTotalChart || epsTopHostsChart) {
+    syncEpsSlideLayout();
+  }
   if (trendChart) trendChart.resize();
   syncRuleSeverityChartForExportLayout();
   renderEpsEventsTable();
@@ -2882,6 +2883,13 @@ function renderTfPosCharts() {
   });
 }
 
+function isInvalidEpsHostName(host) {
+  const h = String(host || "").trim();
+  if (!h) return true;
+  const lower = h.toLowerCase();
+  return lower === "\\n" || lower === "null" || lower === "n/a";
+}
+
 function parseEpsTopHostsRows(csvText) {
   const lines = String(csvText || "")
     .split(/\r?\n/)
@@ -2891,22 +2899,61 @@ function parseEpsTopHostsRows(csvText) {
   const rows = lines.map(parseCsvCells).filter((r) => r.some((c) => c !== ""));
   if (!rows.length) return [];
   const head = rows[0].map(normalizeKey);
-  const hasHeader = head.some((k) => k.includes("host") || k.includes("device") || k.includes("eps"));
+  const hasHeader = head.some(
+    (k) =>
+      k.includes("host") ||
+      k.includes("device") ||
+      k.includes("name") ||
+      k.includes("eps") ||
+      k.includes("eventrate") ||
+      k.includes("rate")
+  );
   const dataRows = hasHeader ? rows.slice(1) : rows;
   const findCol = (keys, fallback) => {
     if (!hasHeader) return fallback;
     const idx = head.findIndex((k) => keys.some((s) => k.includes(s)));
     return idx >= 0 ? idx : fallback;
   };
-  const iHost = findCol(["host", "device", "reportingdevice", "name"], 0);
-  const iEps = findCol(["eps", "avgeps", "value"], 1);
-  return dataRows
-    .map((r) => ({
-      host: r[iHost] || "",
+  const iHost = findCol(["hostname", "host", "device", "reportingdevice", "name"], 0);
+  const iEps = findCol(["avgeventrate", "eventrate", "avgeps", "eps", "rate", "value"], 1);
+  const seen = new Set();
+  const parsed = [];
+  dataRows.forEach((r) => {
+    const host = String(r[iHost] || "").trim();
+    if (isInvalidEpsHostName(host)) return;
+    const key = host.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    parsed.push({
+      host,
       eps: Math.max(0, Number(r[iEps]) || 0)
-    }))
-    .filter((r) => r.host)
-    .slice(0, 10);
+    });
+  });
+  return parsed.sort((a, b) => b.eps - a.eps).slice(0, 10);
+}
+
+function pickEpsTotalYScale(peak) {
+  const p = Math.max(Number(peak) || 0, 1);
+  const padded = p * 1.1;
+  const steps = [10, 20, 25, 50, 100, 200, 250, 500, 1000];
+  let step = 10;
+  for (const s of steps) {
+    if (padded / s <= 6) {
+      step = s;
+      break;
+    }
+  }
+  const max = Math.max(step, Math.ceil(padded / step) * step);
+  return { max, step };
+}
+
+function syncEpsSlideLayout() {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (epsTotalChart) epsTotalChart.resize();
+      if (epsTopHostsChart) epsTopHostsChart.resize();
+    });
+  });
 }
 
 function renderEpsTrendPlot() {
@@ -2936,7 +2983,7 @@ function renderEpsTrendPlot() {
   if (epsTotalChart) epsTotalChart.destroy();
   if (epsTopHostsChart) epsTopHostsChart.destroy();
 
-  const totalAxisMax = Math.max(10, Math.ceil((totalEps * 1.08) / 50) * 50);
+  const totalY = pickEpsTotalYScale(totalEps);
   const totalAxisFont = { family: "Calibri, Segoe UI, Arial, sans-serif", size: 11, weight: "bold" };
   const totalPlugins = { legend: { display: false }, totPotPlotFrame: true };
   if (ReportCharts.isDataLabelsRegistered()) {
@@ -2956,15 +3003,29 @@ function renderEpsTrendPlot() {
       responsive: true,
       maintainAspectRatio: false,
       layout: { padding: { top: 18, bottom: 2, left: 4, right: 6 } },
+      elements: { bar: { borderWidth: 0 } },
+      datasets: { bar: { categoryPercentage: 0.62, barPercentage: 0.88, maxBarThickness: 140 } },
       plugins: totalPlugins,
       scales: {
-        x: { grid: { display: false, drawBorder: false }, ticks: { color: "#000", font: { weight: "bold" } } },
+        x: {
+          grid: { display: false, drawBorder: false },
+          ticks: { color: "#000000", font: totalAxisFont, maxRotation: 0, minRotation: 0 }
+        },
         y: {
           beginAtZero: true,
           min: 0,
-          max: totalAxisMax,
-          ticks: { color: "#000", stepSize: Math.max(10, Math.round(totalAxisMax / 8)) },
-          grid: { color: "#d9d9d9", drawBorder: false }
+          max: totalY.max,
+          grace: 0,
+          ticks: {
+            color: "#000000",
+            stepSize: totalY.step,
+            font: totalAxisFont,
+            callback: (v) => {
+              const n = Number(v);
+              return Number.isFinite(n) && Number.isInteger(n) ? String(n) : "";
+            }
+          },
+          grid: { color: "#d9d9d9", drawBorder: false, drawTicks: false }
         }
       }
     }
@@ -3039,6 +3100,7 @@ function renderEpsTrendPlot() {
       )
       .join("");
   }
+  syncEpsSlideLayout();
 }
 
 function ensureTrendDataLabelsPlugin() {
@@ -3246,8 +3308,7 @@ function applyData() {
       }
       if (truePositiveAlertsChart) truePositiveAlertsChart.resize();
       if (falsePositiveAlertsChart) falsePositiveAlertsChart.resize();
-      if (epsTotalChart) epsTotalChart.resize();
-      if (epsTopHostsChart) epsTopHostsChart.resize();
+      syncEpsSlideLayout();
       if (trendChart) trendChart.resize();
       syncRuleSeveritySlideLayout();
       syncEpsEventsSlideLayout();
@@ -3467,8 +3528,7 @@ async function exportPptxFromDom() {
     if (truePositiveAlertsChart) truePositiveAlertsChart.resize();
     if (falsePositiveAlertsChart) falsePositiveAlertsChart.resize();
     syncTfPosSlideLayout();
-    if (epsTotalChart) epsTotalChart.resize();
-    if (epsTopHostsChart) epsTopHostsChart.resize();
+    syncEpsSlideLayout();
     if (trendChart) trendChart.resize();
     syncRuleSeverityChartForExportLayout();
     syncEpsEventsSlideLayout();
@@ -4268,6 +4328,12 @@ async function exportPptxLegacy() {
   const epsRows = parseEpsTopHostsRows(getValue("epsTopHostsCsv"));
   const epsLegendRows = epsRows.length ? epsRows : [{ host: "N/A", eps: 0 }];
 
+  const epsSlideEl = document.getElementById("slideEpsTrendPlot");
+  if (epsSlideEl) epsSlideEl.scrollIntoView({ block: "center" });
+  syncEpsSlideLayout();
+  await new Promise((r) => setTimeout(r, 150));
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
   slide = pptx.addSlide();
   slide.addText("EPS Trend Plot", {
     x: margin,
@@ -4283,57 +4349,83 @@ async function exportPptxLegacy() {
   if (snsLogoDataUrl) {
     slide.addImage({ data: snsLogoDataUrl, x: logoX, y: 0.35 * sy, w: logoW, h: 0.5 });
   }
-  const epsTotalCanvasEl = document.getElementById("epsTotalChart");
-  if (epsTotalCanvasEl) {
-    slide.addImage({
-      data: getHiResChartDataUrl(epsTotalCanvasEl, epsTotalChart),
-      x: 0.12 * sx,
-      y: 0.82 * sy,
-      w: 3.9 * sx,
-      h: 3.95 * sy
-    });
-  }
-  const epsTopCanvasEl = document.getElementById("epsTopHostsChart");
-  if (epsTopCanvasEl) {
-    slide.addImage({
-      data: getHiResChartDataUrl(epsTopCanvasEl, epsTopHostsChart),
-      x: 4.52 * sx,
-      y: 0.82 * sy,
-      w: 5.25 * sx,
-      h: 2.45 * sy
-    });
-  }
-  slide.addTable(
-    [
-      [{ text: epsTableMonthLabel, options: { align: "left" } }, { text: String(epsTotalValue), options: { align: "center", bold: true } }]
-    ],
-    {
-      x: 0.12 * sx,
-      y: 4.68 * sy,
-      w: 3.9 * sx,
-      fontSize: 11,
-      colW: [1.9 * sx, 2.0 * sx],
-      border: { pt: 0.6, color: "D0D0D0" }
+
+  const epsLeftFrame = document.getElementById("epsTrendLeftFrame");
+  const epsRightFrame = document.getElementById("epsTrendRightFrame");
+  const epsLeftImg = await captureElToPng(epsLeftFrame, 2);
+  const epsRightImg = await captureElToPng(epsRightFrame, 2);
+  const epsLeftX = 0.12 * sx;
+  const epsLeftY = 0.82 * sy;
+  const epsLeftW = 3.9 * sx;
+  const epsLeftH = 4.35 * sy;
+  const epsRightX = 4.52 * sx;
+  const epsRightY = 0.82 * sy;
+  const epsRightW = 5.25 * sx;
+  const epsRightH = 4.35 * sy;
+
+  if (epsLeftImg) {
+    slide.addImage({ data: epsLeftImg, x: epsLeftX, y: epsLeftY, w: epsLeftW, h: epsLeftH });
+  } else {
+    const epsTotalCanvasEl = document.getElementById("epsTotalChart");
+    if (epsTotalCanvasEl) {
+      slide.addImage({
+        data: getHiResChartDataUrl(epsTotalCanvasEl, epsTotalChart),
+        x: epsLeftX,
+        y: epsLeftY,
+        w: epsLeftW,
+        h: 3.75 * sy
+      });
     }
-  );
-  const legendTableRows = [];
-  for (let i = 0; i < 5; i += 1) {
-    const left = epsLegendRows[i];
-    const right = epsLegendRows[i + 5];
-    legendTableRows.push([
-      left ? `${i + 1} ${left.host}` : "",
-      right ? `${i + 6} ${right.host}` : ""
-    ]);
+    slide.addTable(
+      [
+        [
+          { text: epsTableMonthLabel, options: { align: "left" } },
+          { text: String(epsTotalValue), options: { align: "center", bold: true } }
+        ]
+      ],
+      {
+        x: epsLeftX,
+        y: 4.68 * sy,
+        w: epsLeftW,
+        fontSize: 11,
+        colW: [1.9 * sx, 2.0 * sx],
+        border: { pt: 0.6, color: "D0D0D0" }
+      }
+    );
   }
-  slide.addTable(legendTableRows, {
-    x: 4.52 * sx,
-    y: 3.35 * sy,
-    w: 5.25 * sx,
-    h: 1.5 * sy,
-    fontSize: 8.5,
-    colW: [2.55 * sx, 2.55 * sx],
-    border: { pt: 0.5, color: "D0D0D0" }
-  });
+
+  if (epsRightImg) {
+    slide.addImage({ data: epsRightImg, x: epsRightX, y: epsRightY, w: epsRightW, h: epsRightH });
+  } else {
+    const epsTopCanvasEl = document.getElementById("epsTopHostsChart");
+    if (epsTopCanvasEl) {
+      slide.addImage({
+        data: getHiResChartDataUrl(epsTopCanvasEl, epsTopHostsChart),
+        x: epsRightX,
+        y: epsRightY,
+        w: epsRightW,
+        h: 2.45 * sy
+      });
+    }
+    const legendTableRows = [];
+    for (let i = 0; i < 5; i += 1) {
+      const left = epsLegendRows[i];
+      const right = epsLegendRows[i + 5];
+      legendTableRows.push([
+        left ? `${i + 1} ${left.host}` : "",
+        right ? `${i + 6} ${right.host}` : ""
+      ]);
+    }
+    slide.addTable(legendTableRows, {
+      x: epsRightX,
+      y: 3.35 * sy,
+      w: epsRightW,
+      h: 1.5 * sy,
+      fontSize: 8.5,
+      colW: [2.55 * sx, 2.55 * sx],
+      border: { pt: 0.5, color: "D0D0D0" }
+    });
+  }
 
   renderEpsEventsTable();
   syncEpsEventsSlideLayout();

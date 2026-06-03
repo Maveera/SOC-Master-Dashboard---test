@@ -645,14 +645,14 @@ This Monthly summary report contains the details of Observations, Findings, Reme
           <div class="page-footer-bar"></div>
         </section>
 
-        <section class="page page-with-footer slide-eps-trend-plot" id="slideEpsTrendPlot" data-slide="eps">
+        <section class="page page-with-footer slide-eps-trend-plot slide-fill" id="slideEpsTrendPlot" data-slide="eps">
           <div class="page-header-right">
             <img class="nav-sns-logo" alt="SNS Logo" />
           </div>
           <h2 class="revision-title eps-main-title">EPS Trend Plot</h2>
           <div class="eps-grid">
             <div class="eps-left-card">
-              <div class="totpot-ss1-frame">
+              <div class="totpot-ss1-frame" id="epsTrendLeftFrame">
                 <div class="eps-left-chart-wrap">
                   <canvas id="epsTotalChart"></canvas>
                 </div>
@@ -667,7 +667,7 @@ This Monthly summary report contains the details of Observations, Findings, Reme
               </div>
             </div>
             <div class="eps-right-card">
-              <div class="totpot-ss1-frame eps-right-frame">
+              <div class="totpot-ss1-frame eps-right-frame" id="epsTrendRightFrame">
                 <div class="eps-right-chart-wrap">
                   <canvas id="epsTopHostsChart"></canvas>
                 </div>
