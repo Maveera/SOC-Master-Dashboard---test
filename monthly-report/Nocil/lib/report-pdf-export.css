@@ -1,0 +1,315 @@
+/* Shared PDF export rules — 960×540 canvas, engagement + SLA layout (Nocil / RMZ / BluPine common slides) */
+@media print {
+  body.report-pdf-export #reportRoot.report,
+  body.nocil-pdf-export #reportRoot.report {
+    width: 960px !important;
+    max-width: 960px !important;
+    --slide-height: 540px;
+    --slide-pad-top: 22px;
+    --slide-pad-x: 36px;
+    --slide-pad-bottom: 46px;
+    --slide-header-band: 66px;
+  }
+
+  body.report-pdf-export #reportRoot .page,
+  body.nocil-pdf-export #reportRoot .page {
+    width: 960px !important;
+    height: 540px !important;
+    min-height: 540px !important;
+    max-height: 540px !important;
+    padding: var(--slide-pad-top) var(--slide-pad-x) var(--slide-pad-bottom) !important;
+    box-sizing: border-box !important;
+  }
+
+  body.report-pdf-export #reportRoot .page:has(> .page-header-right),
+  body.report-pdf-export #reportRoot .page[data-slide="contact"],
+  body.nocil-pdf-export #reportRoot .page:has(> .page-header-right),
+  body.nocil-pdf-export #reportRoot .page[data-slide="contact"] {
+    padding-top: calc(var(--slide-pad-top) + var(--slide-header-band)) !important;
+  }
+
+  body.report-pdf-export #reportRoot .page:has(> .page-header-right) > .page-header-right,
+  body.nocil-pdf-export #reportRoot .page:has(> .page-header-right) > .page-header-right {
+    top: var(--slide-pad-top) !important;
+    right: 22px !important;
+  }
+
+  body.report-pdf-export #reportRoot .revision-title,
+  body.report-pdf-export #reportRoot .slide-title,
+  body.nocil-pdf-export #reportRoot .revision-title,
+  body.nocil-pdf-export #reportRoot .slide-title {
+    font-size: 26px !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="engagement"] .revision-title,
+  body.report-pdf-export #reportRoot .page[data-slide="engagement"] .engagement-slide-title,
+  body.nocil-pdf-export #reportRoot .page[data-slide="engagement"] .revision-title,
+  body.nocil-pdf-export #reportRoot .page[data-slide="engagement"] .engagement-slide-title {
+    font-size: 26px !important;
+  }
+
+  body.report-pdf-export #reportRoot .page table,
+  body.nocil-pdf-export #reportRoot .page table {
+    font-size: inherit !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="engagement"],
+  body.nocil-pdf-export #reportRoot .page[data-slide="engagement"] {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="engagement"] .engagement-container,
+  body.nocil-pdf-export #reportRoot .page[data-slide="engagement"] .engagement-container {
+    flex: 0 0 auto !important;
+    align-items: stretch !important;
+    align-self: stretch !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    gap: 24px !important;
+  }
+
+  body.report-pdf-export #reportRoot .engagement-text,
+  body.report-pdf-export #reportRoot .engagement-text .narrative,
+  body.report-pdf-export #reportRoot .engagement-text .narrative p,
+  body.report-pdf-export #reportRoot .engagement-text p,
+  body.nocil-pdf-export #reportRoot .engagement-text,
+  body.nocil-pdf-export #reportRoot .engagement-text .narrative,
+  body.nocil-pdf-export #reportRoot .engagement-text .narrative p,
+  body.nocil-pdf-export #reportRoot .engagement-text p {
+    font-size: unset !important;
+    line-height: unset !important;
+    margin-bottom: unset !important;
+    padding: unset !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="engagement"] .engagement-text,
+  body.nocil-pdf-export #reportRoot .page[data-slide="engagement"] .engagement-text {
+    flex: 6 1 0 !important;
+    align-self: stretch !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="engagement"] .engagement-graphic,
+  body.nocil-pdf-export #reportRoot .page[data-slide="engagement"] .engagement-graphic {
+    flex: 4 1 0 !important;
+    align-self: stretch !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    display: flex !important;
+    align-items: stretch !important;
+    justify-content: center !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="engagement"] .puzzle-placeholder,
+  body.nocil-pdf-export #reportRoot .page[data-slide="engagement"] .puzzle-placeholder {
+    height: 100% !important;
+    max-height: 100% !important;
+    width: 100% !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="engagement"] .engagement-graphic img,
+  body.report-pdf-export #reportRoot .page[data-slide="engagement"] .puzzle-placeholder img,
+  body.nocil-pdf-export #reportRoot .page[data-slide="engagement"] .engagement-graphic img,
+  body.nocil-pdf-export #reportRoot .page[data-slide="engagement"] .puzzle-placeholder img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: fill !important;
+  }
+
+  /* Risk — continuation slides: table directly under title */
+  #reportRoot .risk-slide-compact[data-risk-contd="true"] .risk-table-wrap {
+    margin-top: 0 !important;
+  }
+
+  #reportRoot .risk-slide-compact .page-footer-bar {
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  /* SLA — mirror web slide-fill layout (Response + Remediation) */
+  body.report-pdf-export #reportRoot .slide-sla-status.page,
+  body.nocil-pdf-export #reportRoot .slide-sla-status.page {
+    display: flex !important;
+    flex-direction: column !important;
+    padding-left: 22px !important;
+    padding-right: 22px !important;
+    padding-bottom: 46px !important;
+  }
+
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-layout,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-layout {
+    flex: 1 1 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    height: 100% !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding-left: 12px !important;
+    margin-top: 0 !important;
+  }
+
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-row,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-row {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 280px) minmax(0, 1fr) !important;
+    grid-template-rows: auto minmax(0, 1fr) !important;
+    gap: 4px 6px !important;
+    overflow: visible !important;
+    align-items: stretch !important;
+  }
+
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-row .sla-block-title,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-row .sla-block-title {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    font-size: 1.05rem !important;
+    line-height: 1.1 !important;
+    padding-left: 4px !important;
+  }
+
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-row .sla-pie-frame,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-row .sla-pie-frame {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: none !important;
+    padding: 6px 8px !important;
+  }
+
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-row-table,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-row-table {
+    grid-column: 2 !important;
+    grid-row: 2 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    justify-content: flex-start !important;
+    overflow: visible !important;
+  }
+
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-table,
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-ref-table,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-table,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-ref-table {
+    display: table !important;
+    visibility: visible !important;
+    width: 100% !important;
+    opacity: 1 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-table th,
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-table td,
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-ref-table th,
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-ref-table td,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-table th,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-table td,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-ref-table th,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-ref-table td {
+    font-size: 0.64rem !important;
+    padding: 3px 4px !important;
+    line-height: 1.15 !important;
+  }
+
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-summary,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-summary {
+    font-size: 0.68rem !important;
+    line-height: 1.25 !important;
+    flex-shrink: 0 !important;
+  }
+
+  body.report-pdf-export #reportRoot .slide-sla-status .sla-legend-text,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .sla-legend-text {
+    font-size: 0.68rem !important;
+    max-width: 38% !important;
+  }
+
+  body.report-pdf-export #reportRoot .slide-sla-status .page-footer-bar,
+  body.nocil-pdf-export #reportRoot .slide-sla-status .page-footer-bar {
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+
+  /* Last slide — contact: same as Nocil (left-aligned copy, nudged block, sizes/colors) */
+  body.report-pdf-export #reportRoot .page[data-slide="contact"],
+  body.nocil-pdf-export #reportRoot .page[data-slide="contact"] {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="contact"] .contact-wrap,
+  body.nocil-pdf-export #reportRoot .page[data-slide="contact"] .contact-wrap {
+    width: 88% !important;
+    margin: 0 0 0 8px !important;
+    padding-left: 55px !important;
+    padding-top: 24px !important;
+    text-align: left !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="contact"] .contact-sns-logo,
+  body.report-pdf-export #reportRoot .page[data-slide="contact"] .last-sns-logo,
+  body.nocil-pdf-export #reportRoot .page[data-slide="contact"] .contact-sns-logo,
+  body.nocil-pdf-export #reportRoot .page[data-slide="contact"] .last-sns-logo {
+    display: block !important;
+    max-width: 220px !important;
+    margin: 0 0 14px !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="contact"] .contact-title,
+  body.nocil-pdf-export #reportRoot .page[data-slide="contact"] .contact-title {
+    text-align: left !important;
+    font-size: 2.35rem !important;
+    line-height: 1.08 !important;
+    color: #082a6f !important;
+    font-weight: 800 !important;
+    margin: 0 0 14px !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="contact"] .contact-details,
+  body.nocil-pdf-export #reportRoot .page[data-slide="contact"] .contact-details {
+    text-align: left !important;
+    font-size: 16px !important;
+    line-height: 1.32 !important;
+    color: #1a6a9b !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="contact"] .contact-details .contact-head,
+  body.nocil-pdf-export #reportRoot .page[data-slide="contact"] .contact-details .contact-head {
+    color: #082a6f !important;
+    font-weight: 800 !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="contact"] .contact-details .contact-name,
+  body.nocil-pdf-export #reportRoot .page[data-slide="contact"] .contact-details .contact-name {
+    font-size: 18px !important;
+    font-weight: 800 !important;
+  }
+
+  body.report-pdf-export #reportRoot .page[data-slide="contact"] .page-footer-bar,
+  body.nocil-pdf-export #reportRoot .page[data-slide="contact"] .page-footer-bar {
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+  }
+}

@@ -1,0 +1,494 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nocil Limited Monthly SOC Report Automation</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./lib/report-theme.css" />
+  <link rel="stylesheet" href="./lib/report-pdf-export.css" />
+</head>
+<body>
+  <div class="app-shell" id="appShell">
+    <button id="menuToggle" class="menu-toggle" aria-label="Toggle Sidebar">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <aside class="sidebar">
+      <h1>Monthly SOC Report</h1>
+      <p class="muted">Update monthly data and export report.</p>
+
+      <div class="tse-control">
+        <label class="tse-toggle">
+          <input type="checkbox" id="textEditToggle" />
+          <span>Edit text style</span>
+        </label>
+        <p class="muted tse-hint" hidden>Click any text on a slide to change its font size &amp; color.</p>
+      </div>
+
+      <label>Customer Name
+        <input id="customerName" type="text" value="" placeholder="Customer name" />
+      </label>
+      <label>Report Date Range
+        <input id="dateRange" type="text" value="" placeholder="DD-MM-YYYY to DD-MM-YYYY" />
+      </label>
+      <label>Report Month Name
+        <input id="tableMonthLabel" type="text" value="" placeholder="e.g. June 2026" />
+      </label>
+      <p class="muted" style="margin: -6px 0 14px; font-size: 0.82rem;">Updates cover, engagement [MONTH], chart titles, and monthly table columns. Leave blank to derive from Report Date Range.</p>
+      <label>Prepared By
+        <input id="preparedBy" type="text" value="" placeholder="Prepared by" />
+      </label>
+      <label>Submitted On
+        <input id="submittedOn" type="text" value="" />
+      </label>
+      <label>SNS Logo
+        <input id="snsLogoInput" type="file" accept="image/*" />
+      </label>
+      <label>Client Logo
+        <input id="clientLogoInput" type="file" accept="image/*" />
+      </label>
+      <label>Engagement Graphic
+        <input id="puzzleLogoInput" type="file" accept="image/*" />
+      </label>
+
+      <div class="form-slide-block" data-form-slide="revision">
+        <h3 class="form-block-title">Document Revision History</h3>
+        <p class="form-block-hint">Values appear on slide 2 (Prepared By, Submitted On, date range).</p>
+      </div>
+
+      <nav class="slide-nav" id="slideNav" aria-label="Report slides" hidden>
+        <p class="slide-nav-heading">Slides (PPT order)</p>
+        <div class="slide-nav-list" id="slideNavList"></div>
+      </nav>
+
+      <div class="form-slide-block" data-form-slide="engagement">
+        <label>Executive Summary
+          <textarea id="executiveSummary" rows="6">It is critical for enterprises to provide a secure environment that guarantees stakeholders the confidential exchange of information.
+
+In order to perform effective security management, creating visibility is the most important aspect. Our GSOC is a combination of best suited technology platform equipped with industry experts from heterogenous skilled domain driven by global industry standard processes implemented for monitoring, analysis, and response which plays a critical role in assessing the security cycle. By adopting such an approach, organizations can understand their current security posture and use it as a benchmark for improvement.
+
+This Monthly summary report contains the details of Observations, Findings, Remediation's suggested, and the action taken on Information security Incidents occurred during [MONTH].</textarea>
+        </label>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="tot-pot">
+        <h3 class="form-block-title">Total Potential Alerts</h3>
+        <p class="form-block-hint">Manual counts for the bar chart (High / Medium / Low). Empty fields are omitted from the chart.</p>
+        <div class="grid-3">
+          <label class="totpot-field totpot-field-high">High
+            <input id="totPotIncHigh" type="number" min="0" value="" />
+          </label>
+          <label class="totpot-field totpot-field-med">Medium
+            <input id="totPotIncMedium" type="number" min="0" value="" />
+          </label>
+          <label class="totpot-field totpot-field-low">Low
+            <input id="totPotIncLow" type="number" min="0" value="" />
+          </label>
+        </div>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="trend">
+        <h3 class="form-block-title">Potential Alert Tickets Trend</h3>
+        <label>Trend CSV (Date,High,Low,Medium)
+          <input id="trendCsvFile" type="file" accept=".csv" />
+          <textarea id="trendCsv" style="display:none;"></textarea>
+        </label>
+        <label>Note (bold line under chart)
+          <input id="trendNote" type="text" value="" placeholder="Note: No security impact was observed" />
+        </label>
+        <label>Narrative
+          <textarea id="trendNarrative" rows="4"></textarea>
+        </label>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="risks" id="totpot-panel">
+        <h3 class="form-block-title">Potential Alerts - Risks Mitigated</h3>
+        <label>Risk Mitigation Narrative
+          <textarea id="riskNarrative" rows="3" placeholder="Rich text supported (**bold**, *italic*)"></textarea>
+        </label>
+        <label>Risk CSV (S.No, Attack Type, Risk Scenario, CIA Triad, Impact, Rating)
+          <input type="file" id="riskCsvFile" accept=".csv" />
+        </label>
+        <p class="form-block-hint">Edit manually if needed:</p>
+        <textarea id="riskCsv" rows="6"></textarea>
+        <div class="grid-3 risk-layout-controls">
+          <label>Max rows per slide
+            <select id="riskMaxRowsPerSlide">
+              <option value="0">Auto (fit slide)</option>
+              <option value="1">1 row</option>
+              <option value="2">2 rows</option>
+              <option value="3" selected>3 rows</option>
+              <option value="4">4 rows</option>
+              <option value="5">5 rows</option>
+            </select>
+          </label>
+          <label>Table font size (px)
+            <input id="riskTableFontSize" type="number" min="8" max="18" step="0.5" value="14" />
+          </label>
+          <label class="risk-reflow-label">
+            <span class="risk-reflow-spacer" aria-hidden="true">&nbsp;</span>
+            <button type="button" id="riskReflowBtn" class="btn-secondary">Reflow table slides</button>
+          </label>
+        </div>
+        <p class="form-block-hint">In the preview, drag the right edge of a column header to resize columns. Overflow rows move to the next slide automatically.</p>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="rule-severity" id="rule-severity-panel">
+        <h3 class="form-block-title">Rule-Based Severity Categories For Potential Alerts</h3>
+        <label>Rule Severity CSV (Rule, High, Medium, Low)
+          <input type="file" id="ruleSeverityCsvFile" accept=".csv" />
+          <textarea id="ruleSeverityCsv" style="display:none"></textarea>
+        </label>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="sla-monthly" id="sla-panel">
+        <h3 class="form-block-title">Response Time SLA</h3>
+        <div class="grid-2">
+          <label>Total Incidents
+            <input id="slaIncidentCount" type="number" min="0" value="" />
+          </label>
+          <label>Closed Incidents
+            <input id="slaClosedIncidentCount" type="number" min="0" value="" />
+          </label>
+        </div>
+        <p class="form-block-hint">Response and remediation SLA % are calculated from these incident counts.</p>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="inventory" id="inventory-panel">
+        <h3 class="form-block-title">Integrated Device Inventory</h3>
+        <label>Inventory CSV (Device Name, Count)
+          <input type="file" id="inventoryCsvFile" accept=".csv" />
+          <textarea id="inventoryCsv" rows="5">Device Name,Count
+Router &amp; Switch,8
+Firewalls,14
+Windows Server,38
+Linux Server,6
+Cloud Services,5
+Workstations,32
+Network Appliances,10</textarea>
+        </label>
+        <label>Inventory Note
+          <textarea id="inventoryNote" rows="2" placeholder="Optional note for the inventory slide"></textarea>
+        </label>
+      </div>
+
+      <div class="button-row">
+        <button id="printBtn" type="button">Export PDF</button>
+        <button id="pptxBtn" type="button" title="Editable text and tables — open in PowerPoint to edit">Export PPTX</button>
+      </div>
+    </aside>
+
+    <main class="preview-wrap">
+      <article id="reportRoot" class="report">
+
+        <!-- Cover Page -->
+        <section class="page cover cover-hero slide-fill" data-slide="cover">
+          <div class="cover-top">
+            <div class="report-logo-slot">
+              <img id="snsLogoPreview" class="cover-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <div class="cover-client-logo-card">
+            <div class="report-logo-slot">
+              <img id="clientLogoPreview" class="cover-client-logo" alt="Client Logo" />
+            </div>
+          </div>
+          <h1 class="cover-main-title">MANAGED INCIDENT RESPONSE &amp;<br />REMEDIATION SERVICE</h1>
+          <p class="cover-subtitle">Monthly SOC Report | <span data-field="month"></span></p>
+          <div class="cover-blue-band"></div>
+        </section>
+
+        <!-- Document Revision History -->
+        <section class="page page-with-footer revision-page slide-fill" data-slide="revision">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="revision-title">Document Revision History</h2>
+          <table class="revision-table">
+            <tbody>
+              <tr>
+                <td class="fw-bold rev-col-1">Version</td>
+                <td class="fw-bold rev-col-2">1.0</td>
+              </tr>
+              <tr class="row-bg">
+                <td class="rev-col-1">Dated</td>
+                <td class="rev-col-2" data-field="range"></td>
+              </tr>
+              <tr>
+                <td class="rev-col-1">Prepared By</td>
+                <td class="rev-col-2" data-field="preparedBy"></td>
+              </tr>
+              <tr class="row-bg">
+                <td class="rev-col-1">Reviewed By</td>
+                <td class="rev-col-2" data-field="reviewedBy"></td>
+              </tr>
+              <tr>
+                <td class="rev-col-1">Approved By</td>
+                <td class="rev-col-2" data-field="approvedBy"></td>
+              </tr>
+              <tr class="row-bg">
+                <td class="rev-col-1">Submitted On</td>
+                <td class="rev-col-2" data-field="submittedOn"></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <!-- The Engagement -->
+        <section class="page page-with-footer slide-fill" data-slide="engagement">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="revision-title engagement-slide-title">The Engagement</h2>
+          <div class="engagement-container">
+            <div class="engagement-text">
+              <p><span class="fw-bold" data-field="customer"></span> has engaged with SNS to monitor and review the entity's security.</p>
+              <div class="narrative" id="executiveSummaryPreview"></div>
+            </div>
+            <div class="engagement-graphic">
+              <img id="puzzleGraphicPreview" src="" alt="Engagement Puzzle Graphic" style="width: 100%; height: 100%; object-fit: fill; display: none;" />
+              <div class="puzzle-placeholder" id="puzzlePlaceholderLayout">
+                 <img src="./final_puzzle.png" alt="Engagement Puzzle Graphic" style="width: 100%; height: 100%; object-fit: fill;" onerror="this.style.display='none'" />
+              </div>
+            </div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page page-with-footer slide-total-potential slide-fill" id="slideTotPotInc" data-slide="tot-pot">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="revision-title revision-title-center totpot-title">Total Potential Alerts</h2>
+          <div class="totpot-chart-box">
+            <div class="totpot-banded-block totpot-ss1-frame" id="totPotBandedBlock">
+              <div class="totpot-chart-canvas-wrap">
+                <canvas id="totPotIncChart"></canvas>
+              </div>
+              <div class="totpot-table-legend-wrap">
+                <table class="totpot-data-table" aria-label="Potential alert counts">
+                  <thead>
+                    <tr>
+                      <th class="totpot-th-empty" scope="col"></th>
+                      <th class="totpot-th-month" scope="col" id="totPotIncTableColHdr">April</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr id="totPotIncTableHighRow">
+                      <td class="totpot-cell-label"><span class="totpot-sq totpot-sq-high"></span> High</td>
+                      <td class="totpot-cell-val" id="totPotIncTableHigh">2</td>
+                    </tr>
+                    <tr id="totPotIncTableMedRow">
+                      <td class="totpot-cell-label"><span class="totpot-sq totpot-sq-med"></span> Medium</td>
+                      <td class="totpot-cell-val" id="totPotIncTableMed">6</td>
+                    </tr>
+                    <tr id="totPotIncTableLowRow" style="display: none;">
+                      <td class="totpot-cell-label"><span class="totpot-sq totpot-sq-low"></span> Low</td>
+                      <td class="totpot-cell-val" id="totPotIncTableLow"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page page-with-footer slide-trend slide-fill" id="slideTrend" data-slide="trend">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="revision-title revision-title-center trend-title">Potential Alert Tickets Trend</h2>
+          <div class="slide-body">
+            <div class="trend-frame">
+              <div class="trend-canvas-wrap">
+                <canvas id="trendChart"></canvas>
+              </div>
+            </div>
+            <p class="trend-note" id="trendNotePreview"></p>
+            <div class="narrative trend-narrative" id="trendNarrativePreview"></div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <div id="riskSlidesContainer"></div>
+
+        <section class="page page-with-footer slide-rule-severity slide-fill" id="slideRuleSeverity" data-slide="rule-severity">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="revision-title revision-title-center rule-severity-title">Rule-Based Severity Categories For Potential Alerts</h2>
+          <div class="rule-severity-chart-wrap">
+            <canvas id="ruleSeverityChart"></canvas>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page page-with-footer slide-sla-status slide-fill" id="slideSlaStatus" data-slide="sla-monthly">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <div class="sla-layout">
+            <div class="sla-row">
+              <h3 class="sla-block-title">Response Time SLA</h3>
+              <div class="sla-pie-frame">
+                <canvas id="responseSlaChart"></canvas>
+                <p class="sla-legend-text" id="responseSlaLegend"></p>
+              </div>
+              <div class="sla-row-table">
+                <table class="sla-table sla-table-response sla-ref-table" aria-label="Response SLA reference">
+                  <thead>
+                    <tr>
+                      <th>Severity Level Description</th>
+                      <th>Severity Level</th>
+                      <th>Response</th>
+                      <th>Resolution/Remediation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>High Severity ticket resulted in extremely serious interruptions to Business system. It has affected the user community</td>
+                      <td>S-1</td>
+                      <td>&le;15 Minutes</td>
+                      <td>4 Hours</td>
+                    </tr>
+                    <tr>
+                      <td>Medium Severity ticket resulted in interruptions normal operations. It does not prevent Business Operations or minor ticket</td>
+                      <td>S-2</td>
+                      <td>&le;15 Minutes</td>
+                      <td>8 Hours</td>
+                    </tr>
+                    <tr>
+                      <td>Low Severity A Request/Query/Service that does not change existing service structure and no cost implication</td>
+                      <td>S-3</td>
+                      <td>&le;30 Minutes</td>
+                      <td>24 Hours</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="sla-summary" id="responseSlaSummary">Enter incident counts above to generate the SLA summary.</p>
+              </div>
+            </div>
+            <div class="sla-row">
+              <h3 class="sla-block-title">Remediation Time SLA</h3>
+              <div class="sla-pie-frame">
+                <canvas id="remediationSlaChart"></canvas>
+                <p class="sla-legend-text" id="remediationSlaLegend"></p>
+              </div>
+              <div class="sla-row-table">
+                <table class="sla-table sla-table-remediation sla-ref-table" aria-label="Remediation SLA reference">
+                  <thead>
+                    <tr>
+                      <th>Severity Level Description</th>
+                      <th>Severity Level</th>
+                      <th>Resolution/Remediation</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>High Severity ticket resulted in extremely serious interruptions to Business system. It has affected the user community</td>
+                      <td>High</td>
+                      <td>4 Hours</td>
+                    </tr>
+                    <tr>
+                      <td>Medium Severity ticket resulted in interruptions normal operations. It does not prevent Business Operations or minor ticket</td>
+                      <td>Medium</td>
+                      <td>8 Hours</td>
+                    </tr>
+                    <tr>
+                      <td>Low A Request/Query/Service that does not change existing service structure and no cost implication</td>
+                      <td>Low</td>
+                      <td>24 Hours</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <p class="sla-summary" id="remediationSlaSummary">Remediation Time for 8 closed tickets were remediated within SLA.</p>
+              </div>
+            </div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page page-with-footer slide-integrated-inventory slide-fill" id="slideInventory" data-slide="inventory">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="revision-title revision-title-center inventory-title">Integrated Device Inventory</h2>
+          <div class="inventory-content">
+          <div class="inventory-table-wrap">
+            <table class="inventory-table">
+              <thead>
+                <tr>
+                  <th style="width: 15%;">S.NO</th>
+                  <th style="width: 55%;">DEVICE NAME</th>
+                  <th style="width: 30%;">COUNT</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody">
+                <!-- Dynamically populated -->
+              </tbody>
+              <tfoot id="inventoryTableFoot">
+                <!-- Dynamically populated -->
+              </tfoot>
+            </table>
+          </div>
+          <p class="inventory-note" id="inventoryNotePreview">The above table represents the devices that are currently in an active state and are under continuous monitoring.</p>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page last-page slide-fill slide-contact-summary page-with-footer" data-slide="contact">
+          <div class="contact-wrap">
+            <img class="contact-sns-logo last-sns-logo" id="lastSnsLogoPreview" alt="SNS Logo" />
+            <h1 class="contact-title">Your Trusted Security Advisor</h1>
+
+            <div class="contact-details">
+              <p class="contact-head">FOR FURTHER DETAILS:</p>
+              <p class="contact-name">Diptesh Saha</p>
+              <p>CISO &amp; Practice Head - Cyber Security &amp; Managed Security</p>
+              <p>Contact No. 7338882888</p>
+              <p>diptesh.s@snsin.com</p>
+            </div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+      </article>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+  <script src="./lib/template-nav-data.js"></script>
+  <script src="./lib/report-rich-text.js"></script>
+  <script src="./lib/report-text-style-editor.js"></script>
+  <script src="./lib/report-charts.js"></script>
+  <script src="./lib/panel-resize.js"></script>
+  <script src="./lib/slide-nav.js"></script>
+  <script src="./lib/engagement-layout.js"></script>
+  <script src="./lib/risk-pagination.js"></script>
+  <script src="./lib/risk-table-resize.js"></script>
+  <script src="./lib/report-print-order.js"></script>
+  <script src="./lib/sla-table-resize.js"></script>
+  <script src="./lib/report-month.js"></script>
+  <script src="./main.js"></script>
+</body>
+</html>

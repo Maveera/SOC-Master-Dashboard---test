@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monthly SOC Report Automation</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./lib/report-theme.css" />
+</head>
+<body>
+  <button id="panelToggleBtn" class="panel-toggle-btn" type="button" aria-label="Show navigation panel" aria-expanded="false">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+  <div id="panelBackdrop" class="panel-backdrop" aria-hidden="true"></div>
+  <div class="app-shell">
+    <aside class="panel">
+      <h1>Monthly SOC Report</h1>
+      <p class="muted">Update monthly data and export report.</p>
+      <div class="tse-control">
+        <label class="tse-toggle">
+          <input type="checkbox" id="textEditToggle" />
+          <span>Edit text style</span>
+        </label>
+        <p class="muted tse-hint" hidden>Click any text on a slide to change its font size &amp; color.</p>
+      </div>
+
+      <label>Customer Name
+        <input id="customerName" type="text" value="" />
+      </label>
+      <label>Report Date Range
+        <input id="dateRange" type="text" value="" placeholder="DD-MM-YYYY to DD-MM-YYYY" />
+      </label>
+      <label>Report Month Name
+        <input id="reportMonthLabel" type="text" value="" placeholder="e.g. June 2026" />
+      </label>
+      <p class="muted" style="margin: -6px 0 14px; font-size: 0.82rem;">Cover, engagement [MONTH], and chart titles. Leave blank to derive from Report Date Range.</p>
+      <label>Table Month Columns
+        <input id="monthColumns" type="text" value="" placeholder="Jan, Feb, Mar, Apr" />
+      </label>
+      <p class="muted" style="margin: -6px 0 14px; font-size: 0.82rem;">Four month headers for EPS, SLA, and alert tables. Leave blank to auto-fill from the report end date.</p>
+      <label>Prepared By
+        <input id="preparedBy" type="text" value="" placeholder="Prepared by" />
+      </label>
+      <label>Submitted On
+        <input id="submittedOn" type="text" value="" />
+      </label>
+      <label>SNS Logo
+        <input id="snsLogoInput" type="file" accept="image/*" />
+      </label>
+      <label>Client Logo
+        <input id="clientLogoInput" type="file" accept="image/*" />
+      </label>
+      <label>Engagement Graphic
+        <input id="puzzleLogoInput" type="file" accept="image/*" />
+      </label>
+
+      <div class="form-slide-block" data-form-slide="revision">
+        <label>Document revision history (one line per entry)
+          <textarea id="documentRevisionHistory" rows="2"></textarea>
+        </label>
+      </div>
+
+      <nav class="slide-nav" id="slideNav" aria-label="Report slides" hidden>
+        <p class="slide-nav-heading">Slides (PPT order)</p>
+        <div class="slide-nav-list" id="slideNavList"></div>
+      </nav>
+
+      <div class="form-slide-block" data-form-slide="engagement">
+        <label>Executive Summary
+          <textarea id="executiveSummary" rows="6">It is critical for enterprises to provide a secure environment that guarantees stakeholders the confidential exchange of information.
+
+In order to perform effective security management, creating visibility is the most important aspect. Our GSOC is a combination of best suited technology platform equipped with industry experts from heterogenous skilled domain driven by global industry standard processes implemented for monitoring, analysis, and response which plays a critical role in assessing the security cycle. By adopting such an approach, organizations can understand their current security posture and use it as a benchmark for improvement.
+
+This Monthly summary report contains the details of Observations, Findings, Remediation's suggested, and the action taken on Information security Incidents occurred during [MONTH].</textarea>
+        </label>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="alert-quad" style="border: 2px solid #1e4f9a; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #f8fbff;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #1e4f9a;">Potential Incidents and Alert Summary</h3>
+        
+        <label>Overall Alerts CSV (Severity,Jan,Feb,Mar,Apr)
+          <input type="file" id="overallAlertsCsvFile" accept=".csv" />
+          <textarea id="overallAlertsCsv" rows="4"></textarea>
+        </label>
+        <label>Overall Alerts Narrative
+          <textarea id="overallAlertsNarrative" rows="4"></textarea>
+        </label>
+        
+        <label>True Positive CSV (Severity,Jan,Feb,Mar,Apr)
+          <input type="file" id="truePositiveCsvFile" accept=".csv" />
+          <textarea id="truePositiveCsv" rows="4"></textarea>
+        </label>
+        <label>True Positive Narrative
+          <textarea id="truePositiveNarrative" rows="4"></textarea>
+        </label>
+        
+        <label>False Positive CSV (Severity,Jan,Feb,Mar,Apr)
+          <input type="file" id="falsePositiveCsvFile" accept=".csv" />
+          <textarea id="falsePositiveCsv" rows="4"></textarea>
+        </label>
+        <label>False Positive Narrative
+          <textarea id="falsePositiveNarrative" rows="4"></textarea>
+        </label>
+        
+        <label>Potential Incidents CSV (Severity,Jan,Feb,Mar,Apr)
+          <input type="file" id="apraavaIncidentsCsvFile" accept=".csv" />
+          <textarea id="apraavaIncidentsCsv" rows="4"></textarea>
+        </label>
+        <label>Potential Incidents Narrative
+          <textarea id="apraavaIncidentsNarrative" rows="4"></textarea>
+        </label>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="trend" style="border: 2px solid #cf9409; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #fffdf5;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #cf9409;"><span data-dynamic="trendTitle">Potential Incident Tickets Trend</span></h3>
+        <label>Trend CSV (Date,High,Low,Medium)
+          <input type="file" id="trendCsvFile" accept=".csv" />
+          <textarea id="trendCsv" style="display:none;"></textarea>
+        </label>
+        <label>Trend slide Title Note (Bold)
+          <input id="trendNote" type="text" value="" />
+        </label>
+        <label>Trend slide Narrative
+          <textarea id="trendNarrative" rows="4"></textarea>
+        </label>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="pot-incidents" style="border: 2px solid #be2f2f; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #fff5f5;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #be2f2f;"><span data-dynamic="potIncTitle">Potential Incidents</span></h3>
+        <label>Incidents CSV (Rule Name,High,Low,Medium)
+          <input type="file" id="potIncidentsCsvFile" accept=".csv" />
+          <textarea id="potIncidentsCsv" style="display:none;"></textarea>
+        </label>
+        <label>Incidents slide Narrative
+          <textarea id="potIncidentsNarrative" rows="4"></textarea>
+        </label>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="eps" style="border: 2px solid #00b050; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #f0fdf4;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #00b050;">EPS Trend Plot</h3>
+        <p style="font-size: 12px; margin: 0 0 10px 0; font-weight: bold;">Average EPS</p>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px;">
+           <label><span data-month-slot="Jan">Jan</span> <input type="number" id="epsJan" value="" /></label>
+           <label><span data-month-slot="Feb">Feb</span> <input type="number" id="epsFeb" value="" /></label>
+           <label><span data-month-slot="Mar">Mar</span> <input type="number" id="epsMar" value="" /></label>
+           <label><span data-month-slot="Apr">Apr</span> <input type="number" id="epsApr" value="" /></label>
+        </div>
+        <br/>
+        <label>EPS Table CSV (Reporting Device,Event Name,<span id="monthColumnsCsvHint">Jan,Feb,Mar,Apr</span>)
+          <input type="file" id="epsTableCsvFile" accept=".csv" />
+          <textarea id="epsTableCsv" style="display:none;"></textarea>
+        </label>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="top-eps" style="border: 2px solid #1e4f9a; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #f2f7ff;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #1e4f9a;">Top 10 Devices Contributing To Highest EPS</h3>
+        <label>Top Devices CSV (S.No,Reporting Device,AVG EPS)
+          <input type="file" id="deviceCsvFile" accept=".csv" />
+          <textarea id="deviceCsv" style="display:none;"></textarea>
+        </label>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="risks" style="border: 2px solid #555; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #fafafa;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #555;"><span data-dynamic="riskTitle">Potential Incidents – Risks Mitigated</span></h3>
+        <label>Risks Narrative
+          <textarea id="riskNarrative" rows="4"></textarea>
+        </label>
+        <label>Risks CSV File Upload (S.No, Attack Type, Risk Scenario, Type of Risk(s), CIA Triad, Potential Business Impact(s), Risk Rating)
+          <input type="file" id="riskCsvFile" accept=".csv" />
+        </label>
+        <p style="font-size: 12px; margin: 10px 0 5px;">Edit manually if needed:</p>
+        <textarea id="riskCsv" rows="8"></textarea>
+        <div class="grid-3 risk-layout-controls">
+          <label>Max rows per slide
+            <select id="riskMaxRowsPerSlide">
+              <option value="0">Auto (fit slide)</option>
+              <option value="1">1 row</option>
+              <option value="2">2 rows</option>
+              <option value="3" selected>3 rows</option>
+              <option value="4">4 rows</option>
+              <option value="5">5 rows</option>
+            </select>
+          </label>
+          <label>Table font size (px)
+            <input id="riskTableFontSize" type="number" min="8" max="18" step="0.5" value="14" />
+          </label>
+          <label class="risk-reflow-label">
+            <span class="risk-reflow-spacer" aria-hidden="true">&nbsp;</span>
+            <button type="button" id="riskReflowBtn" class="btn-secondary">Reflow table slides</button>
+          </label>
+        </div>
+        <p class="form-block-hint">Drag column borders in the preview to resize. Rows that do not fit move to the next slide.</p>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="sla-monthly" style="border: 2px solid #a32222; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #fafafa;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #a32222;">Response Time SLA</h3>
+        
+        <label style="font-weight: bold; margin-bottom: 10px; display: block;">Tickets Count</label>
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; text-align: center; font-size: 11px; margin-bottom: 15px;">
+          <div><strong>Severity</strong></div><div><strong data-month-index="0">Jan</strong></div><div><strong data-month-index="1">Feb</strong></div><div><strong data-month-index="2">Mar</strong></div><div><strong data-month-index="3">Apr</strong></div>
+          
+          <div style="text-align: left;">S-1 (High)</div>
+          <div><input type="number" id="slaHighJanCount" style="width: 80%; text-align:center;" value="" /></div>
+          <div><input type="number" id="slaHighFebCount" style="width: 80%; text-align:center;" value="" /></div>
+          <div><input type="number" id="slaHighMarCount" style="width: 80%; text-align:center;" value="" /></div>
+          <div><input type="number" id="slaHighAprCount" style="width: 80%; text-align:center;" value="" /></div>
+          
+          <div style="text-align: left;">S-2 (Medium)</div>
+          <div><input type="number" id="slaMedJanCount" style="width: 80%; text-align:center;" value="" /></div>
+          <div><input type="number" id="slaMedFebCount" style="width: 80%; text-align:center;" value="" /></div>
+          <div><input type="number" id="slaMedMarCount" style="width: 80%; text-align:center;" value="" /></div>
+          <div><input type="number" id="slaMedAprCount" style="width: 80%; text-align:center;" value="" /></div>
+          
+          <div style="text-align: left;">S-3 (Low)</div>
+          <div><input type="number" id="slaLowJanCount" style="width: 80%; text-align:center;" value="" /></div>
+          <div><input type="number" id="slaLowFebCount" style="width: 80%; text-align:center;" value="" /></div>
+          <div><input type="number" id="slaLowMarCount" style="width: 80%; text-align:center;" value="" /></div>
+          <div><input type="number" id="slaLowAprCount" style="width: 80%; text-align:center;" value="" /></div>
+        </div>
+
+        <label style="font-weight: bold; margin-bottom: 10px; display: block;">Remediation Time SLA % (Chart)</label>
+        <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; text-align: center; font-size: 11px;">
+          <div><strong>Severity</strong></div><div><strong data-month-index="0" data-month-pct="true">Jan %</strong></div><div><strong data-month-index="1" data-month-pct="true">Feb %</strong></div><div><strong data-month-index="2" data-month-pct="true">Mar %</strong></div><div><strong data-month-index="3" data-month-pct="true">Apr %</strong></div>
+          
+          <div style="text-align: left;">S-1 (High)</div>
+          <div><input type="number" id="slaHighJanPct" style="width: 80%; text-align:center;" value=""/></div>
+          <div><input type="number" id="slaHighFebPct" style="width: 80%; text-align:center;" value=""/></div>
+          <div><input type="number" id="slaHighMarPct" style="width: 80%; text-align:center;" value=""/></div>
+          <div><input type="number" id="slaHighAprPct" style="width: 80%; text-align:center;" value=""/></div>
+          
+          <div style="text-align: left;">S-2 (Medium)</div>
+          <div><input type="number" id="slaMedJanPct" style="width: 80%; text-align:center;" value=""/></div>
+          <div><input type="number" id="slaMedFebPct" style="width: 80%; text-align:center;" value=""/></div>
+          <div><input type="number" id="slaMedMarPct" style="width: 80%; text-align:center;" value=""/></div>
+          <div><input type="number" id="slaMedAprPct" style="width: 80%; text-align:center;" value=""/></div>
+          
+          <div style="text-align: left;">S-3 (Low)</div>
+          <div><input type="number" id="slaLowJanPct" style="width: 80%; text-align:center;" value=""/></div>
+          <div><input type="number" id="slaLowFebPct" style="width: 80%; text-align:center;" value=""/></div>
+          <div><input type="number" id="slaLowMarPct" style="width: 80%; text-align:center;" value=""/></div>
+          <div><input type="number" id="slaLowAprPct" style="width: 80%; text-align:center;" value=""/></div>
+        </div>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="inventory" style="border: 2px solid #00b0ba; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #fafafa;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #00b0ba;">Integrated Device Inventory</h3>
+        <label>Inventory CSV (Device Name,Count)
+          <input type="file" id="inventoryCsvFile" accept=".csv" />
+          <textarea id="inventoryCsv" rows="5"></textarea>
+        </label>
+        <label>Inventory Note
+          <textarea id="inventoryNote" rows="4"></textarea>
+        </label>
+      </div>
+
+      <div class="form-slide-block" data-form-slide="key-points" style="border: 2px solid #edaf1a; padding: 15px; margin-bottom: 20px; border-radius: 8px; background: #fffcf5;">
+        <h3 style="margin-top: 0; margin-bottom: 15px; font-size: 16px; color: #edaf1a;">Key Points - Overall Summary</h3>
+        <p style="font-size: 12px; margin: 0 0 8px; line-height: 1.4;">
+          Type content manually. Start a line with <strong>**Heading:**</strong> for each numbered section (1, 2, 3…).
+          Use <strong>**text**</strong> anywhere else for inline bold.
+        </p>
+        <label>Key Points Content
+          <textarea id="kpContent" rows="18" placeholder="**Section heading:**&#10;• Example bullet point"></textarea>
+        </label>
+        <textarea id="kpDecommissioning" rows="5" style="display:none;" aria-hidden="true"></textarea>
+        <textarea id="kpRuleImplementation" rows="5" style="display:none;" aria-hidden="true"></textarea>
+        <textarea id="kpContract" rows="6" style="display:none;" aria-hidden="true"></textarea>
+      </div>
+
+      <div class="button-row">
+        <button id="applyBtn" type="button">Apply Data</button>
+        <button id="printBtn" type="button">Export PDF</button>
+        <button id="pptxBtn" type="button" title="Editable text and tables — open in PowerPoint to edit">Export PPTX</button>
+        <button id="docxBtn" type="button">Export DOCX</button>
+      </div>
+    </aside>
+
+    <main class="preview-wrap">
+      <article id="reportRoot" class="report">
+        <section class="page cover cover-hero slide-fill" data-slide="cover">
+          <div class="cover-top">
+            <div class="report-logo-slot">
+              <img id="snsLogoPreview" class="cover-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <div class="cover-client-logo-card">
+            <div class="report-logo-slot">
+              <img id="clientLogoPreview" class="cover-client-logo" alt="Client Logo" />
+            </div>
+          </div>
+          <h1 class="cover-main-title">MANAGED INCIDENT RESPONSE &amp;<br />REMEDIATION SERVICE</h1>
+          <p class="cover-subtitle">Monthly SOC Report | <span data-field="month"></span></p>
+          <div class="cover-blue-band"></div>
+        </section>
+
+        <section class="page page-with-footer revision-page slide-fill" data-slide="revision">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="revision-title">Document Revision History</h2>
+          <table class="revision-table">
+            <tbody>
+              <tr>
+                <td class="fw-bold rev-col-1">Version</td>
+                <td class="fw-bold rev-col-2">1.0</td>
+              </tr>
+              <tr class="row-bg">
+                <td class="rev-col-1">Dated</td>
+                <td class="rev-col-2" data-field="range"></td>
+              </tr>
+              <tr>
+                <td class="rev-col-1">Prepared By</td>
+                <td class="rev-col-2" data-field="preparedBy"></td>
+              </tr>
+              <tr class="row-bg">
+                <td class="rev-col-1">Reviewed By</td>
+                <td class="rev-col-2" data-field="reviewedBy"></td>
+              </tr>
+              <tr>
+                <td class="rev-col-1">Approved By</td>
+                <td class="rev-col-2" data-field="approvedBy"></td>
+              </tr>
+              <tr class="row-bg">
+                <td class="rev-col-1">Submitted On</td>
+                <td class="rev-col-2" data-field="submittedOn"></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page page-with-footer slide-fill" data-slide="engagement">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="revision-title engagement-slide-title">The Engagement</h2>
+          <div class="engagement-container">
+            <div class="engagement-text">
+              <p><span class="fw-bold" data-field="customer"></span> has engaged with SNS to monitor and review the entity's security.</p>
+              <div class="narrative" id="executiveSummaryPreview"></div>
+            </div>
+            <div class="engagement-graphic">
+              <img id="puzzleGraphicPreview" src="" alt="Engagement Puzzle Graphic" style="display: none;" />
+              <div class="puzzle-placeholder" id="puzzlePlaceholderLayout">
+                 <img src="final_puzzle.png" alt="Engagement Puzzle Graphic" />
+              </div>
+            </div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page apraava-page-section slide-fill page-with-footer" data-slide="alert-quad">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="slide-title-lg revision-title revision-title-center">Potential Incidents and Alert Summary</h2>
+          <div class="apraava-quad-grid">
+            
+            <!-- Overall Alerts -->
+            <div class="apraava-quad-col">
+              <div class="aq-box">
+                <h3 class="aq-title">Overall Alerts</h3>
+                <div class="aq-canvas-container">
+                  <canvas id="aqChart1"></canvas>
+                </div>
+                <table class="aq-table" id="aqTable1"></table>
+              </div>
+              <div class="aq-narrative" id="aqNarrative1"></div>
+            </div>
+
+            <!-- True Positives -->
+            <div class="apraava-quad-col">
+              <div class="aq-box">
+                <h3 class="aq-title">True Positive Alerts</h3>
+                <div class="aq-canvas-container">
+                  <canvas id="aqChart2"></canvas>
+                </div>
+                <table class="aq-table" id="aqTable2"></table>
+              </div>
+              <div class="aq-narrative" id="aqNarrative2"></div>
+            </div>
+
+            <!-- False Positives -->
+            <div class="apraava-quad-col">
+              <div class="aq-box">
+                <h3 class="aq-title">False Positive Alerts</h3>
+                <div class="aq-canvas-container">
+                  <canvas id="aqChart3"></canvas>
+                </div>
+                <table class="aq-table" id="aqTable3"></table>
+              </div>
+              <div class="aq-narrative" id="aqNarrative3"></div>
+            </div>
+
+            <!-- Potential Incidents -->
+            <div class="apraava-quad-col">
+              <div class="aq-box">
+                <h3 class="aq-title">Potential Incidents</h3>
+                <div class="aq-canvas-container">
+                  <canvas id="aqChart4"></canvas>
+                </div>
+                <table class="aq-table" id="aqTable4"></table>
+              </div>
+              <div class="aq-narrative" id="aqNarrative4"></div>
+            </div>
+
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+
+
+        <section class="page slide-fill page-with-footer" data-slide="trend">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="slide-title"><span data-dynamic="trendTitle">Potential Incident Tickets Trend</span></h2>
+          <div class="slide-body">
+            <div class="chart-frame">
+              <canvas id="trendChart"></canvas>
+            </div>
+            <p class="slide-note" data-field="trendNote"></p>
+            <div class="narrative slide-narrative" id="trendNarrativePreview"></div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page slide-fill page-with-footer" data-slide="pot-incidents">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="slide-title slide-title-center"><span data-dynamic="potIncTitle">Potential Incidents</span></h2>
+          <div class="slide-body">
+            <div class="chart-frame">
+              <canvas id="potIncidentsChart"></canvas>
+            </div>
+            <div class="narrative slide-narrative" id="potIncidentsNarrativePreview"></div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page slide-fill page-with-footer slide-eps-trend" data-slide="eps">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="slide-title-lg revision-title revision-title-center">EPS Trend Plot</h2>
+          <div class="slide-body eps-split">
+            <div class="eps-split-left">
+              <div class="eps-chart-wrap">
+                <canvas id="epsTrendChart"></canvas>
+              </div>
+              <table class="eps-avg-table">
+                <thead>
+                   <tr>
+                     <th colspan="2">AVG EPS</th>
+                   </tr>
+                </thead>
+                <tbody>
+                   <tr>
+                     <td><span class="eps-sq eps-sq-jan"></span><span data-month-index="0">Jan</span></td>
+                     <td id="epsJanTable"></td>
+                   </tr>
+                   <tr>
+                     <td><span class="eps-sq eps-sq-feb"></span><span data-month-index="1">Feb</span></td>
+                     <td id="epsFebTable"></td>
+                   </tr>
+                   <tr>
+                     <td><span class="eps-sq eps-sq-mar"></span><span data-month-index="2">Mar</span></td>
+                     <td id="epsMarTable"></td>
+                   </tr>
+                   <tr>
+                     <td><span class="eps-sq eps-sq-apr"></span><span data-month-index="3">Apr</span></td>
+                     <td id="epsAprTable"></td>
+                   </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="eps-split-right">
+               <table class="eps-events-table">
+                 <thead>
+                   <tr>
+                     <th rowspan="2">S.No</th>
+                     <th rowspan="2">Reporting Device</th>
+                     <th rowspan="2">Event Name</th>
+                     <th colspan="4">COUNT(Matched Events)</th>
+                   </tr>
+                   <tr>
+                     <th data-month-index="0">Jan</th>
+                     <th data-month-index="1">Feb</th>
+                     <th data-month-index="2">Mar</th>
+                     <th data-month-index="3">Apr</th>
+                   </tr>
+                 </thead>
+                 <tbody id="epsTrendTableBody"></tbody>
+               </table>
+            </div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page slide-fill page-with-footer slide-top-eps" data-slide="top-eps">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="slide-title-lg revision-title revision-title-center">Top 10 Devices Contributing To Highest EPS</h2>
+          <div class="slide-body top-eps-split">
+            <div class="top-eps-chart-wrap">
+              <div class="top-eps-chart-area">
+                <canvas id="topEpsChart"></canvas>
+              </div>
+            </div>
+            <div class="top-eps-table-wrap">
+               <table class="top-eps-devices-table">
+                 <thead>
+                   <tr>
+                     <th>S.No</th>
+                     <th>Reporting Device</th>
+                     <th>AVG EPS</th>
+                   </tr>
+                 </thead>
+                 <tbody id="deviceTableBody"></tbody>
+               </table>
+            </div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <div id="riskSlidesContainer"></div>
+
+        <section class="page slide-fill page-with-footer slide-sla-monthly" data-slide="sla-monthly">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <div class="sla-content">
+            <h2 class="slide-title revision-title sla-main-title">Response Time SLA</h2>
+            <table class="sla-count-table">
+              <thead>
+                <tr>
+                  <th>Severity Level</th>
+                  <th>SLA Response</th>
+                  <th>SLA Resolution</th>
+                  <th data-month-index="0">Jan</th>
+                  <th data-month-index="1">Feb</th>
+                  <th data-month-index="2">Mar</th>
+                  <th data-month-index="3">Apr</th>
+                </tr>
+              </thead>
+              <tbody id="slaTableBody"></tbody>
+            </table>
+
+            <h2 class="slide-title revision-title sla-subtitle">Remediation Time SLA in %</h2>
+            <div class="sla-chart-frame">
+              <canvas id="slaPctChart"></canvas>
+            </div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page slide-fill page-with-footer slide-inventory" data-slide="inventory">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="slide-title-lg revision-title revision-title-center">Integrated Device Inventory</h2>
+          <div class="inventory-wrap">
+            <table class="slide-inventory-table">
+              <thead>
+                <tr>
+                  <th>S.NO</th>
+                  <th>DEVICE NAME</th>
+                  <th>COUNT</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody"></tbody>
+              <tfoot id="inventoryTableFooter"></tfoot>
+            </table>
+
+            <div id="inventoryNotePreview" class="slide-inventory-note"></div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page slide-fill page-with-footer slide-key-points" data-slide="key-points">
+          <div class="page-header-right">
+            <div class="report-logo-slot">
+              <img class="nav-sns-logo" alt="SNS Logo" />
+            </div>
+          </div>
+          <h2 class="slide-title-lg revision-title revision-title-center">Key Points - Overall Summary</h2>
+          <div class="keypoints-wrap slide-keypoints" id="keyPointsPreview"></div>
+          <div class="page-footer-bar"></div>
+        </section>
+
+        <section class="page last-page slide-fill slide-contact-summary page-with-footer" data-slide="contact">
+          <div class="contact-wrap">
+            <img class="contact-sns-logo last-sns-logo" id="lastSnsLogoPreview" alt="SNS Logo" />
+            <h1 class="contact-title">Your Trusted Security Advisor</h1>
+
+            <div class="contact-details">
+              <p class="contact-head">FOR FURTHER DETAILS:</p>
+              <p class="contact-name">Diptesh Saha</p>
+              <p>CISO & Practice Head - Cyber Security & Managed Security</p>
+              <p>Contact No. 7338882888</p>
+              <p>diptesh.s@snsin.com</p>
+            </div>
+          </div>
+          <div class="page-footer-bar"></div>
+        </section>
+      </article>
+    </main>
+  </div>
+
+  <script src="./lib/template-nav-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+  <script src="./lib/report-rich-text.js"></script>
+  <script src="./lib/report-text-style-editor.js"></script>
+  <script src="./lib/risk-pagination.js"></script>
+  <script src="./lib/risk-table-resize.js"></script>
+  <script src="./lib/report-charts.js"></script>
+  <script src="./lib/panel-resize.js"></script>
+  <script src="./lib/slide-nav.js"></script>
+  <script src="./lib/report-month.js"></script>
+  <script src="./main.js"></script>
+</body>
+</html>

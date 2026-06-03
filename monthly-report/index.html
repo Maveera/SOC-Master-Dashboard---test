@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Monthly SOC Report</title>
+  <style>
+    :root {
+      --navy: #021a3f;
+      --blue: #1e4f9a;
+      --sky: #4a90d9;
+      --text: #1a2332;
+      --muted: #5c6b7f;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Calibri, "Segoe UI", Arial, sans-serif;
+      color: var(--text);
+      background: #f0f4fa;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 55%, #2d6cb5 100%);
+      color: var(--white);
+      padding: 40px 24px;
+      text-align: center;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(255, 255, 255, 0.06) 0%, transparent 40%);
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      margin: 0 0 12px;
+      font-size: clamp(1.75rem, 4vw, 2.35rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+
+    .hero p {
+      margin: 0;
+      font-size: 1.05rem;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.88);
+      max-width: 540px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .content-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 36px 20px;
+    }
+
+    .cards {
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      align-items: stretch;
+    }
+
+    .card {
+      display: flex;
+      flex-direction: column;
+      background: var(--white);
+      border-radius: 16px;
+      text-decoration: none;
+      color: inherit;
+      overflow: hidden;
+      box-shadow: 0 4px 24px rgba(2, 26, 63, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.8);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card:hover,
+    .card:focus {
+      transform: translateY(-6px);
+      box-shadow: 0 16px 40px rgba(2, 26, 63, 0.16);
+      outline: none;
+    }
+
+    .card-accent {
+      height: 5px;
+    }
+
+    .card-accent.apraava { background: linear-gradient(90deg, #0ea5a5, #14b8a6); }
+    .card-accent.nocil { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+    .card-accent.blupine { background: linear-gradient(90deg, #d97706, #f59e0b); }
+    .card-accent.rmz { background: linear-gradient(90deg, #7c3aed, #a855f7); }
+
+    .card-body {
+      padding: 24px 22px 22px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-top {
+      margin-bottom: 14px;
+    }
+
+    .icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .icon svg {
+      width: 26px;
+      height: 26px;
+    }
+
+    .icon.apraava { background: #e6fafa; color: #0d9488; }
+    .icon.nocil { background: #eff6ff; color: #2563eb; }
+    .icon.blupine { background: #fff7ed; color: #d97706; }
+    .icon.rmz { background: #f3e8ff; color: #7c3aed; }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--navy);
+    }
+
+    .card p {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .card-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 18px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--white);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+    }
+
+    .card:hover .card-btn {
+      transform: translateX(2px);
+    }
+
+    .card-btn.apraava { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+    .card-btn.nocil { background: linear-gradient(90deg, #1d4ed8, #3b82f6); }
+    .card-btn.blupine { background: linear-gradient(90deg, #c2410c, #ea580c); }
+    .card-btn.rmz { background: linear-gradient(90deg, #6d28d9, #9333ea); }
+
+    .card-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .page-footer {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 12px 20px;
+      background: linear-gradient(90deg, var(--navy), var(--blue));
+      flex-shrink: 0;
+    }
+
+    .page-footer p {
+      margin: 0;
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.92);
+      text-align: center;
+    }
+
+    .page-footer a {
+      color: rgba(255, 255, 255, 0.95);
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .page-footer a:hover,
+    .page-footer a:focus {
+      text-decoration: underline;
+    }
+
+    @media (max-width: 640px) {
+      .hero {
+        padding: 32px 20px;
+      }
+
+      .content-area {
+        padding: 24px 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-inner">
+      <h1>Monthly SOC Report</h1>
+      <p>Select a customer to open the report builder and generate your monthly deck.</p>
+    </div>
+  </header>
+
+  <main class="content-area">
+    <div class="cards">
+      <div class="grid">
+      <a class="card" href="Apraava/index.html">
+        <div class="card-accent apraava"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="icon apraava" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+            </div>
+          </div>
+          <h2>Apraava Energy</h2>
+          <p>Alert summary, EPS trends, SLA metrics, device inventory, and key points in one unified builder.</p>
+          <span class="card-btn apraava">
+            Open Report Builder
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </span>
+        </div>
+      </a>
+
+      <a class="card" href="Nocil/index.html">
+        <div class="card-accent nocil"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="icon nocil" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 3v18h18"/>
+                <path d="M7 16l4-6 4 3 5-8"/>
+              </svg>
+            </div>
+          </div>
+          <h2>Nocil Limited</h2>
+          <p>Total alerts, incident trends, risk mitigation, rule severity, SLA status, and inventory.</p>
+          <span class="card-btn nocil">
+            Open Report Builder
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </span>
+        </div>
+      </a>
+
+      <a class="card" href="BluPine/index.html">
+        <div class="card-accent blupine"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="icon blupine" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+              </svg>
+            </div>
+          </div>
+          <h2>Blupine Energy</h2>
+          <p>FortiSIEM alerts, true/false positives, firewall EPS, support tickets, SLA reporting, and key points.</p>
+          <span class="card-btn blupine">
+            Open Report Builder
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </span>
+        </div>
+      </a>
+
+      <a class="card" href="RMZCorp/index.html">
+        <div class="card-accent rmz"></div>
+        <div class="card-body">
+          <div class="card-top">
+            <div class="icon rmz" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2"/>
+                <path d="M8 21h8M12 17v4"/>
+              </svg>
+            </div>
+          </div>
+          <h2>RMZ Corp</h2>
+          <p>FortiSIEM alerts, true/false positives, firewall EPS, support tickets, SLA reporting, and key points.</p>
+          <span class="card-btn rmz">
+            Open Report Builder
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </span>
+        </div>
+      </a>
+    </div>
+    </div>
+  </main>
+
+  <footer class="page-footer">
+    <p>Developed by <a href="https://maveera.tech" target="_blank" rel="noopener noreferrer">Maveera</a>. All rights reserved.</p>
+  </footer>
+</body>
+</html>

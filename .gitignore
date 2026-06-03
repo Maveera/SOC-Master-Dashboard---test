@@ -1,0 +1,20 @@
+# Secrets & credentials
+.env
+.env.*
+!.env.example
+credentials.json
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Real report exports (do not commit customer data)
+*.pptx
+*.pdf
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
