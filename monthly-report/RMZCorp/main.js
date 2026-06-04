@@ -31,8 +31,7 @@ let epsTotalChart;
 let epsTopHostsChart;
 let trendChart;
 let ruleSeverityChart;
-let ruleSeverityExportDprRestore = null;
-let epsExportDprRestore = null;
+let rmzChartsExportDprRestore = null;
 let rmzRiskExportSkipVerticalFill = false;
 let responseSlaChart;
 let remediationSlaChart;
@@ -143,22 +142,92 @@ async function prepareReportForExport() {
     initSlaTableColumnResize(document.getElementById("slideSlaStatus"));
   }
   return () => {
-    restoreEpsChartsAfterExport();
-    restoreRuleSeverityChartAfterExport();
+    restoreRmzChartsExportDpi();
     document.body.classList.remove("is-exporting");
     rmzRiskExportSkipVerticalFill = false;
   };
 }
 
-function syncRuleSeverityChartForExportLayout() {
-  if (!ruleSeverityChart) return;
+const RMZ_CHART_EXPORT_DPR = 4;
+const EPS_FRAME_CAPTURE_SCALE = 3;
+const RMZ_CHART_SLIDE_IDS = new Set([
+  "slideTotPotInc",
+  "slideTrend",
+  "slideFortiSiemAlerts",
+  "slideTfPosAlerts",
+  "slideEpsTrendPlot",
+  "slideRuleSeverity",
+  "slideSlaStatus"
+]);
+
+function getRmzOnscreenChartDpr() {
+  return Math.min(3, window.devicePixelRatio || 2);
+}
+
+function getRmzExportCharts() {
+  return [
+    totPotIncChart,
+    fortiSiemAlertsChart,
+    truePositiveAlertsChart,
+    falsePositiveAlertsChart,
+    epsTotalChart,
+    epsTopHostsChart,
+    trendChart,
+    ruleSeverityChart,
+    responseSlaChart,
+    remediationSlaChart
+  ].filter(Boolean);
+}
+
+function resolveChartForCanvas(canvas) {
+  if (!canvas) return null;
+  const byId = {
+    totPotIncChart,
+    fortiSiemAlertsChart,
+    truePositiveAlertsChart,
+    falsePositiveAlertsChart,
+    epsTotalChart,
+    epsTopHostsChart,
+    trendChart,
+    ruleSeverityChart,
+    responseSlaChart,
+    remediationSlaChart
+  };
+  if (canvas.id && byId[canvas.id]) return byId[canvas.id];
+  return getRmzExportCharts().find((chart) => chart?.canvas === canvas) || null;
+}
+
+function bumpRmzChartsExportDpi() {
   const isExport =
     document.body.classList.contains("is-exporting") ||
     document.body.classList.contains("pptx-export-capture");
-  if (isExport && ruleSeverityExportDprRestore == null) {
-    ruleSeverityExportDprRestore = ruleSeverityChart.options.devicePixelRatio;
-    ruleSeverityChart.options.devicePixelRatio = 3;
+  if (!isExport) return;
+  if (rmzChartsExportDprRestore == null) {
+    rmzChartsExportDprRestore = new Map();
+    getRmzExportCharts().forEach((chart) => {
+      rmzChartsExportDprRestore.set(chart, chart.options.devicePixelRatio);
+    });
   }
+  getRmzExportCharts().forEach((chart) => {
+    chart.options.devicePixelRatio = RMZ_CHART_EXPORT_DPR;
+    resizeChartForHiResCapture(chart);
+    chart.update("none");
+  });
+}
+
+function restoreRmzChartsExportDpi() {
+  if (!rmzChartsExportDprRestore) return;
+  rmzChartsExportDprRestore.forEach((prevDpr, chart) => {
+    if (!chart?.options) return;
+    chart.options.devicePixelRatio = prevDpr;
+    resizeChartForHiResCapture(chart);
+    chart.update("none");
+  });
+  rmzChartsExportDprRestore = null;
+}
+
+function syncRuleSeverityChartForExportLayout() {
+  if (!ruleSeverityChart) return;
   syncRuleSeveritySlideLayout();
   ruleSeverityChart.update("none");
 }
@@ -169,7 +238,7 @@ function syncAllSlideLayoutsForExport(options = {}) {
   syncEngagementLayout();
   if (totPotIncChart) {
     totPotIncChart.resize();
-    syncTotpotTableLayout(totPotIncChart, "#slideTotPotInc .totpot-table-legend-wrap");
+    syncTotPotIncSlideLayout();
   }
   if (fortiSiemAlertsChart) {
     syncFortiSiemSlideLayout();
@@ -177,11 +246,12 @@ function syncAllSlideLayoutsForExport(options = {}) {
   if (truePositiveAlertsChart || falsePositiveAlertsChart) {
     syncTfPosSlideLayout();
   }
-  syncEpsChartsForExportLayout();
+  syncEpsSlideLayout();
   if (trendChart) trendChart.resize();
   syncRuleSeverityChartForExportLayout();
   renderEpsEventsTable();
   syncEpsEventsSlideLayout();
+  bumpRmzChartsExportDpi();
   const skipRiskFill =
     options.skipRiskVerticalFill === true || rmzRiskExportSkipVerticalFill === true;
   if (
@@ -222,6 +292,7 @@ function finishExportRestore() {
     exportRestoreCallback();
     exportRestoreCallback = null;
     applyData();
+    syncTotPotIncTableLayout();
   }
 }
 
@@ -2140,7 +2211,7 @@ function renderRuleSeverityChart() {
       indexAxis: "y",
       responsive: true,
       maintainAspectRatio: false,
-      devicePixelRatio: Math.min(2.5, window.devicePixelRatio || 2),
+      devicePixelRatio: getRmzOnscreenChartDpr(),
       layout: { padding: { left: 6, right: 12, top: 0, bottom: 0 } },
       datasets: {
         bar: {
@@ -2455,6 +2526,14 @@ function getTotPotIncSeverityEntries() {
   }).filter(Boolean);
 }
 
+function syncTotPotIncTableLayout() {
+  const wrap = document.querySelector("#slideTotPotInc .totpot-table-legend-wrap");
+  if (!wrap) return;
+  wrap.style.marginLeft = "";
+  wrap.style.width = "";
+  wrap.style.maxWidth = "";
+}
+
 function syncTotPotIncSlideLayout() {
   const slide =
     document.getElementById("slideTotPotInc") ||
@@ -2465,6 +2544,7 @@ function syncTotPotIncSlideLayout() {
   if (count >= 1 && count <= 3) {
     slide.classList.add(`totpot-rows-${count}`);
   }
+  syncTotPotIncTableLayout();
 }
 
 function updateTotPotIncTable(monthLbl) {
@@ -2578,6 +2658,7 @@ function renderTotPotIncChart() {
       animation: false,
       responsive: true,
       maintainAspectRatio: false,
+      devicePixelRatio: getRmzOnscreenChartDpr(),
       layout: { padding: { left: 0, right: 2, top: 16, bottom: 2 } },
       elements: { bar: { borderWidth: 0 } },
       plugins,
@@ -2802,6 +2883,7 @@ function buildTotPotStyleSeverityChart(canvas, oldChart, high, medium, low) {
       animation: false,
       responsive: true,
       maintainAspectRatio: false,
+      devicePixelRatio: getRmzOnscreenChartDpr(),
       layout: { padding: { left: 0, right: 2, top: 16, bottom: 2 } },
       elements: { bar: { borderWidth: 0 } },
       plugins,
@@ -3033,43 +3115,6 @@ function syncEpsSlideLayout() {
   });
 }
 
-const EPS_CHART_EXPORT_DPR = 4;
-const EPS_FRAME_CAPTURE_SCALE = 3;
-
-function syncEpsChartsForExportLayout() {
-  if (!epsTotalChart && !epsTopHostsChart) return;
-  const isExport =
-    document.body.classList.contains("is-exporting") ||
-    document.body.classList.contains("pptx-export-capture");
-  if (isExport && epsExportDprRestore == null) {
-    epsExportDprRestore = {
-      total: epsTotalChart?.options?.devicePixelRatio,
-      hosts: epsTopHostsChart?.options?.devicePixelRatio
-    };
-  }
-  if (isExport) {
-    if (epsTotalChart) epsTotalChart.options.devicePixelRatio = EPS_CHART_EXPORT_DPR;
-    if (epsTopHostsChart) epsTopHostsChart.options.devicePixelRatio = EPS_CHART_EXPORT_DPR;
-  }
-  syncEpsSlideLayout();
-  if (epsTotalChart) epsTotalChart.update("none");
-  if (epsTopHostsChart) epsTopHostsChart.update("none");
-}
-
-function restoreEpsChartsAfterExport() {
-  if (!epsExportDprRestore) return;
-  if (epsTotalChart && epsExportDprRestore.total != null) {
-    epsTotalChart.options.devicePixelRatio = epsExportDprRestore.total;
-    epsTotalChart.update("none");
-  }
-  if (epsTopHostsChart && epsExportDprRestore.hosts != null) {
-    epsTopHostsChart.options.devicePixelRatio = epsExportDprRestore.hosts;
-    epsTopHostsChart.update("none");
-  }
-  epsExportDprRestore = null;
-  syncEpsSlideLayout();
-}
-
 function renderEpsTrendPlot() {
   const totalCanvas = document.getElementById("epsTotalChart");
   const hostsCanvas = document.getElementById("epsTopHostsChart");
@@ -3098,7 +3143,7 @@ function renderEpsTrendPlot() {
   if (epsTopHostsChart) epsTopHostsChart.destroy();
 
   const totalY = pickEpsTotalYScale(totalEps);
-  const chartDpr = Math.min(2.5, window.devicePixelRatio || 2);
+  const chartDpr = getRmzOnscreenChartDpr();
   const totalAxisFont = {
     family: "Calibri, Segoe UI, Arial, sans-serif",
     size: 12,
@@ -3254,6 +3299,16 @@ function renderTrendChart() {
     fontSize: 16,
     legendColor: "#000"
   });
+  if (ReportCharts.isDataLabelsRegistered() && plugins.datalabels) {
+    plugins.datalabels = {
+      ...plugins.datalabels,
+      color: "#000000",
+      font: { weight: "bold", size: 11, family: "Calibri, Segoe UI, Arial, sans-serif" },
+      backgroundColor: "rgba(255,255,255,0.92)",
+      borderRadius: 2,
+      padding: { top: 1, bottom: 1, left: 3, right: 3 }
+    };
+  }
 
   trendChart = new Chart(canvas, {
     type: "bar",
@@ -3265,6 +3320,7 @@ function renderTrendChart() {
       animation: false,
       responsive: true,
       maintainAspectRatio: false,
+      devicePixelRatio: getRmzOnscreenChartDpr(),
       plugins,
       scales: {
         x: ReportCharts.buildTrendChartXScaleOptions({ title: getTrendXAxisLabel(), rowCount: rows.length }),
@@ -3428,7 +3484,10 @@ function applyData() {
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
       syncEngagementLayout();
-      if (totPotIncChart) totPotIncChart.resize();
+      if (totPotIncChart) {
+        totPotIncChart.resize();
+        syncTotPotIncSlideLayout();
+      }
       if (fortiSiemAlertsChart) {
         syncFortiSiemSlideLayout();
       }
@@ -3448,25 +3507,11 @@ function applyData() {
   }
 }
 
-function restoreRuleSeverityChartAfterExport() {
-  if (!ruleSeverityChart || ruleSeverityExportDprRestore == null) return;
-  ruleSeverityChart.options.devicePixelRatio = ruleSeverityExportDprRestore;
-  syncRuleSeveritySlideLayout();
-  ruleSeverityChart.update("none");
-  ruleSeverityExportDprRestore = null;
-}
-
-function resizeChartForHiResCapture(chart) {
-  if (!chart) return;
-  if (chart === ruleSeverityChart) syncRuleSeveritySlideLayout();
-  else chart.resize();
-}
-
 function getHiResChartDataUrl(canvas, chart, captureDpr) {
   if (!canvas) return "";
   const isChart = chart && chart.options && chart.canvas === canvas;
   if (isChart) {
-    const dpr = captureDpr || 4;
+    const dpr = captureDpr || RMZ_CHART_EXPORT_DPR;
     const prevDpr = chart.options.devicePixelRatio;
     chart.options.devicePixelRatio = dpr;
     resizeChartForHiResCapture(chart);
@@ -3494,23 +3539,40 @@ function getHiResChartDataUrl(canvas, chart, captureDpr) {
   return out.toDataURL("image/png");
 }
 
+function resizeChartForHiResCapture(chart) {
+  if (!chart) return;
+  if (chart === ruleSeverityChart) syncRuleSeveritySlideLayout();
+  else if (chart === epsTotalChart || chart === epsTopHostsChart) syncEpsSlideLayout();
+  else chart.resize();
+}
+
+async function injectPageChartHiResSnapshots(page) {
+  if (!page) return () => {};
+  const cleanups = [];
+  for (const canvas of page.querySelectorAll("canvas")) {
+    const chart = resolveChartForCanvas(canvas);
+    if (!chart) continue;
+    const wrap = canvas.parentElement;
+    if (!wrap) continue;
+    const dataUrl = getHiResChartDataUrl(canvas, chart, RMZ_CHART_EXPORT_DPR);
+    if (!dataUrl) continue;
+    const img = document.createElement("img");
+    img.src = dataUrl;
+    img.className = "chart-export-snapshot";
+    img.style.cssText = "display:block;width:100%;height:100%;object-fit:contain;";
+    canvas.style.visibility = "hidden";
+    wrap.appendChild(img);
+    cleanups.push(() => {
+      canvas.style.visibility = "";
+      img.remove();
+    });
+  }
+  if (cleanups.length) await waitForImagesInElement(page);
+  return () => cleanups.forEach((fn) => fn());
+}
+
 async function injectRuleSeverityHiResSnapshot(page) {
-  if (page.id !== "slideRuleSeverity" || !ruleSeverityChart) return () => {};
-  const canvas = page.querySelector("#ruleSeverityChart");
-  const wrap = canvas && canvas.parentElement;
-  if (!canvas || !wrap) return () => {};
-  const dataUrl = getHiResChartDataUrl(canvas, ruleSeverityChart, 4);
-  const img = document.createElement("img");
-  img.src = dataUrl;
-  img.className = "rule-severity-export-snapshot";
-  img.style.cssText = "display:block;width:100%;height:100%;object-fit:contain;";
-  canvas.style.visibility = "hidden";
-  wrap.appendChild(img);
-  await waitForImagesInElement(wrap);
-  return () => {
-    canvas.style.visibility = "";
-    img.remove();
-  };
+  return injectPageChartHiResSnapshots(page);
 }
 
 function engagementSlideOnClone(doc) {
@@ -3647,18 +3709,22 @@ async function exportPptxFromDom() {
   document.body.classList.add("pptx-export-capture");
   try {
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-    if (totPotIncChart) totPotIncChart.resize();
+    if (totPotIncChart) {
+      totPotIncChart.resize();
+      syncTotPotIncSlideLayout();
+    }
     if (fortiSiemAlertsChart) {
       syncFortiSiemSlideLayout();
     }
     if (truePositiveAlertsChart) truePositiveAlertsChart.resize();
     if (falsePositiveAlertsChart) falsePositiveAlertsChart.resize();
     syncTfPosSlideLayout();
-    syncEpsChartsForExportLayout();
+    syncEpsSlideLayout();
     if (trendChart) trendChart.resize();
     syncRuleSeverityChartForExportLayout();
     syncEpsEventsSlideLayout();
     updateSlaSlide();
+    bumpRmzChartsExportDpi();
     window.dispatchEvent(new Event("resize"));
     await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     await new Promise((r) => setTimeout(r, 750));
@@ -3688,10 +3754,10 @@ async function exportPptxFromDom() {
       await new Promise((r) => setTimeout(r, 400));
       await waitForPageCanvases(page, 5000);
       await waitForImagesInElement(page);
-      const undoRuleSnapshot = await injectRuleSeverityHiResSnapshot(page);
+      const undoChartSnapshots = await injectPageChartHiResSnapshots(page);
       let img = "";
       try {
-        const captureScale = page.id === "slideRuleSeverity" ? 2.5 : 2;
+        const captureScale = RMZ_CHART_SLIDE_IDS.has(page.id) ? 3 : 2;
         img = await captureElToPng(page, captureScale);
         if (!img) img = await captureElToPng(page, 1.4);
         if (!img) {
@@ -3704,7 +3770,7 @@ async function exportPptxFromDom() {
           img = await captureElToPng(page, 0.8);
         }
       } finally {
-        undoRuleSnapshot();
+        undoChartSnapshots();
       }
       if (img) {
         const slide = pptx.addSlide();
@@ -3729,7 +3795,7 @@ async function exportPptxFromDom() {
 
     await pptx.writeFile({ fileName: `${sanitizeFilename(getValue("customerName") || "Customer")}_Monthly_SOC_Report.pptx`, compression: true });
   } finally {
-    restoreRuleSeverityChartAfterExport();
+    restoreRmzChartsExportDpi();
     document.body.classList.remove("pptx-export-capture");
   }
 }
@@ -3988,7 +4054,7 @@ async function exportPptxLegacy() {
   const trendCanvasForPpt = document.getElementById("trendChart");
   if (trendCanvasForPpt) {
     slide.addImage({
-      data: getHiResChartDataUrl(trendCanvasForPpt, trendChart),
+      data: getHiResChartDataUrl(trendCanvasForPpt, trendChart, RMZ_CHART_EXPORT_DPR),
       x: 0.45 * sx,
       y: 0.9 * sy,
       w: 9.1 * sx,
@@ -4119,7 +4185,7 @@ async function exportPptxLegacy() {
     if (ruleCanvas) {
       syncRuleSeveritySlideLayout();
       slide.addImage({
-        data: getHiResChartDataUrl(ruleCanvas, ruleSeverityChart, 4),
+        data: getHiResChartDataUrl(ruleCanvas, ruleSeverityChart, RMZ_CHART_EXPORT_DPR),
         x: 0.5 * sx,
         y: 1.4 * sy,
         w: 9.0 * sx,
@@ -4412,7 +4478,7 @@ async function exportPptxLegacy() {
   const fpCanvasEl = document.getElementById("falsePositiveAlertsChart");
   if (tpCanvasEl) {
     slide.addImage({
-      data: getHiResChartDataUrl(tpCanvasEl, truePositiveAlertsChart),
+      data: getHiResChartDataUrl(tpCanvasEl, truePositiveAlertsChart, RMZ_CHART_EXPORT_DPR),
       x: 0.35 * sx,
       y: 1.15 * sy,
       w: 4.6 * sx,
@@ -4421,7 +4487,7 @@ async function exportPptxLegacy() {
   }
   if (fpCanvasEl) {
     slide.addImage({
-      data: getHiResChartDataUrl(fpCanvasEl, falsePositiveAlertsChart),
+      data: getHiResChartDataUrl(fpCanvasEl, falsePositiveAlertsChart, RMZ_CHART_EXPORT_DPR),
       x: 5.05 * sx,
       y: 1.15 * sy,
       w: 4.6 * sx,
@@ -4456,7 +4522,8 @@ async function exportPptxLegacy() {
 
   const epsSlideEl = document.getElementById("slideEpsTrendPlot");
   if (epsSlideEl) epsSlideEl.scrollIntoView({ block: "center" });
-  syncEpsChartsForExportLayout();
+  syncEpsSlideLayout();
+  bumpRmzChartsExportDpi();
   await new Promise((r) => setTimeout(r, 200));
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
@@ -4495,7 +4562,7 @@ async function exportPptxLegacy() {
     const epsTotalCanvasEl = document.getElementById("epsTotalChart");
     if (epsTotalCanvasEl) {
       slide.addImage({
-        data: getHiResChartDataUrl(epsTotalCanvasEl, epsTotalChart, EPS_CHART_EXPORT_DPR),
+        data: getHiResChartDataUrl(epsTotalCanvasEl, epsTotalChart, RMZ_CHART_EXPORT_DPR),
         x: epsLeftX,
         y: epsLeftY,
         w: epsLeftW,
@@ -4526,7 +4593,7 @@ async function exportPptxLegacy() {
     const epsTopCanvasEl = document.getElementById("epsTopHostsChart");
     if (epsTopCanvasEl) {
       slide.addImage({
-        data: getHiResChartDataUrl(epsTopCanvasEl, epsTopHostsChart, EPS_CHART_EXPORT_DPR),
+        data: getHiResChartDataUrl(epsTopCanvasEl, epsTopHostsChart, RMZ_CHART_EXPORT_DPR),
         x: epsRightX,
         y: epsRightY,
         w: epsRightW,

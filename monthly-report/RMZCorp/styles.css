@@ -918,6 +918,10 @@ th {
   padding: 4px 0 2px;
 }
 
+#slideTotPotInc .totpot-table-legend-wrap {
+  width: 100%;
+}
+
 .slide-total-potential .totpot-data-table {
   font-size: 0.9rem;
 }
@@ -1386,6 +1390,19 @@ th {
   overflow: hidden;
   text-overflow: ellipsis;
   font-weight: 600;
+}
+
+.chart-export-snapshot {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+body.is-exporting canvas,
+body.report-pdf-export canvas {
+  print-color-adjust: exact;
+  -webkit-print-color-adjust: exact;
 }
 
 .slide-eps-events .eps-events-title {
@@ -2445,6 +2462,10 @@ th {
     min-height: 540px !important;
     max-height: 540px !important;
     overflow: hidden !important;
+  }
+
+  body.report-pdf-export #slideTotPotInc .totpot-table-legend-wrap {
+    width: 100% !important;
   }
 
   body.report-pdf-export #reportRoot .page[data-slide="risks"] .risk-table th,
