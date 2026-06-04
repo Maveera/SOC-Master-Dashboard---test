@@ -155,7 +155,8 @@
     return {
       maxRowsPerSlide: userMax,
       rowsPerSlideTarget: userMax > 0 ? userMax : DEFAULT_ROWS_PER_SLIDE,
-      tableFontSizePx: Number.isFinite(fontPx) && fontPx > 0 ? fontPx : 0
+      tableFontSizePx: Number.isFinite(fontPx) && fontPx > 0 ? fontPx : 0,
+      skipFitOnColumnResize: layoutOptions?.skipFitOnColumnResize === true
     };
   }
 
@@ -569,9 +570,9 @@
     global.initRiskTableColumnResize(scope, {
       onColumnResizeEnd(table) {
         const slide = table?.closest?.(".risk-slide");
-        if (slide) fitRiskSlideTable(slide, layoutOptions);
-        const { maxRowsPerSlide } = parseLayoutOptions(layoutOptions);
-        if (maxRowsPerSlide === 0) {
+        const { maxRowsPerSlide, skipFitOnColumnResize } = parseLayoutOptions(layoutOptions);
+        if (slide && !skipFitOnColumnResize) fitRiskSlideTable(slide, layoutOptions);
+        if (maxRowsPerSlide === 0 && !skipFitOnColumnResize) {
           ensureRiskSlidesNoOverflow(hostId, escapeHtml, contdTitle, layoutOptions);
           applyRiskTableVerticalFill(hostId, layoutOptions);
         }

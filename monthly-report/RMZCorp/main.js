@@ -32,6 +32,8 @@ let epsTopHostsChart;
 let trendChart;
 let ruleSeverityChart;
 let ruleSeverityExportDprRestore = null;
+let epsExportDprRestore = null;
+let rmzRiskExportSkipVerticalFill = false;
 let responseSlaChart;
 let remediationSlaChart;
 let totPotPlotFramePluginRegistered = false;
@@ -125,16 +127,26 @@ async function waitForChartsReady(delayMs = 900) {
 async function prepareReportForExport() {
   await ensureDefaultPuzzleDataUrl();
   document.body.classList.add("is-exporting");
+  rmzRiskExportSkipVerticalFill = false;
+  const riskLayoutSnapshot = captureRmzRiskTableLayout();
   applyData();
   await renderRiskSlides();
+  const riskRestore = restoreRmzRiskTableLayout(riskLayoutSnapshot);
+  rmzRiskExportSkipVerticalFill =
+    riskRestore.hasCustomCols || riskLayoutSnapshot.some((snap) => snap?.wrapFill);
+  if (typeof initRiskTableColumnResize === "function") {
+    initRiskTableColumnResize(document.getElementById("riskSlidesContainer"));
+  }
   await waitForChartsReady();
-  syncAllSlideLayoutsForExport();
+  syncAllSlideLayoutsForExport({ skipRiskVerticalFill: rmzRiskExportSkipVerticalFill });
   if (typeof initSlaTableColumnResize === "function") {
     initSlaTableColumnResize(document.getElementById("slideSlaStatus"));
   }
   return () => {
+    restoreEpsChartsAfterExport();
     restoreRuleSeverityChartAfterExport();
     document.body.classList.remove("is-exporting");
+    rmzRiskExportSkipVerticalFill = false;
   };
 }
 
@@ -151,7 +163,7 @@ function syncRuleSeverityChartForExportLayout() {
   ruleSeverityChart.update("none");
 }
 
-function syncAllSlideLayoutsForExport() {
+function syncAllSlideLayoutsForExport(options = {}) {
   updateSlaSlide();
   syncEngagementPuzzleImage();
   syncEngagementLayout();
@@ -165,14 +177,18 @@ function syncAllSlideLayoutsForExport() {
   if (truePositiveAlertsChart || falsePositiveAlertsChart) {
     syncTfPosSlideLayout();
   }
-  if (epsTotalChart || epsTopHostsChart) {
-    syncEpsSlideLayout();
-  }
+  syncEpsChartsForExportLayout();
   if (trendChart) trendChart.resize();
   syncRuleSeverityChartForExportLayout();
   renderEpsEventsTable();
   syncEpsEventsSlideLayout();
-  if (typeof RiskPagination !== "undefined" && RiskPagination.applyRiskTableVerticalFill) {
+  const skipRiskFill =
+    options.skipRiskVerticalFill === true || rmzRiskExportSkipVerticalFill === true;
+  if (
+    !skipRiskFill &&
+    typeof RiskPagination !== "undefined" &&
+    RiskPagination.applyRiskTableVerticalFill
+  ) {
     RiskPagination.applyRiskTableVerticalFill("riskSlidesContainer", getRiskLayoutOptions());
   }
   renderKeyPointsPreview();
@@ -1882,8 +1898,69 @@ function getRiskLayoutOptions() {
   const fontPx = parseFloat(getValue("riskTableFontSize"));
   return {
     maxRowsPerSlide: Number.isFinite(maxRows) && maxRows > 0 ? maxRows : 0,
-    tableFontSizePx: Number.isFinite(fontPx) && fontPx > 0 ? fontPx : 0
+    tableFontSizePx: Number.isFinite(fontPx) && fontPx > 0 ? fontPx : 0,
+    skipFitOnColumnResize: true
   };
+}
+
+function captureRmzRiskTableLayout() {
+  const slides = document.querySelectorAll("#riskSlidesContainer > .risk-slide");
+  return [...slides].map((slide) => {
+    const table = slide.querySelector(".risk-table");
+    const wrap = slide.querySelector(".risk-table-wrap");
+    if (!table) return null;
+    const headerRow = table.querySelector("thead tr");
+    const colWidths = headerRow
+      ? [...headerRow.children].map((cell) => cell.style.width || "")
+      : [];
+    const hasCustomCols = colWidths.some((w) => w && /px$/i.test(w));
+    const rowHeights = [...table.querySelectorAll("tbody tr")].map((tr) => tr.style.height || "");
+    return {
+      colWidths,
+      hasCustomCols,
+      fontSize: table.style.fontSize || "",
+      rowHeights,
+      wrapHeight: wrap?.style.height || "",
+      wrapFill: wrap?.classList.contains("risk-table-wrap--fill") || false,
+      tableHeight: table.style.height || ""
+    };
+  });
+}
+
+function restoreRmzRiskTableLayout(snapshot) {
+  if (!snapshot?.length) return { hasCustomCols: false };
+  const slides = document.querySelectorAll("#riskSlidesContainer > .risk-slide");
+  let hasCustomCols = false;
+  snapshot.forEach((snap, idx) => {
+    if (!snap) return;
+    const slide = slides[idx];
+    if (!slide) return;
+    const table = slide.querySelector(".risk-table");
+    const wrap = slide.querySelector(".risk-table-wrap");
+    if (!table) return;
+    if (snap.hasCustomCols) hasCustomCols = true;
+    if (snap.fontSize) table.style.fontSize = snap.fontSize;
+    if (snap.tableHeight) table.style.height = snap.tableHeight;
+    if (wrap) {
+      if (snap.wrapHeight) wrap.style.height = snap.wrapHeight;
+      wrap.classList.toggle("risk-table-wrap--fill", snap.wrapFill);
+    }
+    const headerRow = table.querySelector("thead tr");
+    if (headerRow && snap.colWidths?.length) {
+      snap.colWidths.forEach((w, colIdx) => {
+        if (!w) return;
+        if (headerRow.children[colIdx]) headerRow.children[colIdx].style.width = w;
+        table.querySelectorAll("tbody tr").forEach((row) => {
+          if (row.children[colIdx]) row.children[colIdx].style.width = w;
+        });
+      });
+    }
+    const bodyRows = [...table.querySelectorAll("tbody tr")];
+    snap.rowHeights?.forEach((h, rowIdx) => {
+      if (h && bodyRows[rowIdx]) bodyRows[rowIdx].style.height = h;
+    });
+  });
+  return { hasCustomCols };
 }
 
 function initRiskTableUserControls() {
@@ -2956,6 +3033,43 @@ function syncEpsSlideLayout() {
   });
 }
 
+const EPS_CHART_EXPORT_DPR = 4;
+const EPS_FRAME_CAPTURE_SCALE = 3;
+
+function syncEpsChartsForExportLayout() {
+  if (!epsTotalChart && !epsTopHostsChart) return;
+  const isExport =
+    document.body.classList.contains("is-exporting") ||
+    document.body.classList.contains("pptx-export-capture");
+  if (isExport && epsExportDprRestore == null) {
+    epsExportDprRestore = {
+      total: epsTotalChart?.options?.devicePixelRatio,
+      hosts: epsTopHostsChart?.options?.devicePixelRatio
+    };
+  }
+  if (isExport) {
+    if (epsTotalChart) epsTotalChart.options.devicePixelRatio = EPS_CHART_EXPORT_DPR;
+    if (epsTopHostsChart) epsTopHostsChart.options.devicePixelRatio = EPS_CHART_EXPORT_DPR;
+  }
+  syncEpsSlideLayout();
+  if (epsTotalChart) epsTotalChart.update("none");
+  if (epsTopHostsChart) epsTopHostsChart.update("none");
+}
+
+function restoreEpsChartsAfterExport() {
+  if (!epsExportDprRestore) return;
+  if (epsTotalChart && epsExportDprRestore.total != null) {
+    epsTotalChart.options.devicePixelRatio = epsExportDprRestore.total;
+    epsTotalChart.update("none");
+  }
+  if (epsTopHostsChart && epsExportDprRestore.hosts != null) {
+    epsTopHostsChart.options.devicePixelRatio = epsExportDprRestore.hosts;
+    epsTopHostsChart.update("none");
+  }
+  epsExportDprRestore = null;
+  syncEpsSlideLayout();
+}
+
 function renderEpsTrendPlot() {
   const totalCanvas = document.getElementById("epsTotalChart");
   const hostsCanvas = document.getElementById("epsTopHostsChart");
@@ -2984,11 +3098,21 @@ function renderEpsTrendPlot() {
   if (epsTopHostsChart) epsTopHostsChart.destroy();
 
   const totalY = pickEpsTotalYScale(totalEps);
-  const totalAxisFont = { family: "Calibri, Segoe UI, Arial, sans-serif", size: 11, weight: "bold" };
+  const chartDpr = Math.min(2.5, window.devicePixelRatio || 2);
+  const totalAxisFont = {
+    family: "Calibri, Segoe UI, Arial, sans-serif",
+    size: 12,
+    weight: "700"
+  };
+  const hostAxisFont = {
+    family: "Calibri, Segoe UI, Arial, sans-serif",
+    size: 11,
+    weight: "700"
+  };
   const totalPlugins = { legend: { display: false }, totPotPlotFrame: true };
   if (ReportCharts.isDataLabelsRegistered()) {
     totalPlugins.datalabels = ReportCharts.buildEpsTrendTotalValueDataLabelOptions({
-      font: { weight: "bold", size: 12, family: totalAxisFont.family }
+      font: { weight: "700", size: 14, family: totalAxisFont.family }
     });
   }
 
@@ -3002,6 +3126,7 @@ function renderEpsTrendPlot() {
       animation: false,
       responsive: true,
       maintainAspectRatio: false,
+      devicePixelRatio: chartDpr,
       layout: { padding: { top: 18, bottom: 2, left: 4, right: 6 } },
       elements: { bar: { borderWidth: 0 } },
       datasets: { bar: { categoryPercentage: 0.62, barPercentage: 0.88, maxBarThickness: 140 } },
@@ -3050,12 +3175,13 @@ function renderEpsTrendPlot() {
       animation: false,
       responsive: true,
       maintainAspectRatio: false,
+      devicePixelRatio: chartDpr,
       plugins: {
         legend: { display: false },
         datalabels: {
           display: true,
           color: "#111",
-          font: { weight: "bold", size: 10 },
+          font: { weight: "700", size: 11, family: hostAxisFont.family },
           formatter: (v) => {
             const n = Number(v) || 0;
             return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
@@ -3075,16 +3201,16 @@ function renderEpsTrendPlot() {
       },
       scales: {
         x: {
-          title: { display: true, text: "Hosts", color: "#000", font: { weight: "bold" } },
+          title: { display: true, text: "Hosts", color: "#000", font: hostAxisFont },
           grid: { display: false, drawBorder: false },
-          ticks: { color: "#000", font: { weight: "bold" } }
+          ticks: { color: "#000", font: hostAxisFont }
         },
         y: {
-          title: { display: true, text: "EPS", color: "#000", font: { weight: "bold" } },
+          title: { display: true, text: "EPS", color: "#000", font: hostAxisFont },
           beginAtZero: true,
           min: 0,
           max: hostAxisMax,
-          ticks: { color: "#000" },
+          ticks: { color: "#000", font: hostAxisFont },
           grid: { color: "#c9c9c9", drawBorder: false }
         }
       }
@@ -3528,7 +3654,7 @@ async function exportPptxFromDom() {
     if (truePositiveAlertsChart) truePositiveAlertsChart.resize();
     if (falsePositiveAlertsChart) falsePositiveAlertsChart.resize();
     syncTfPosSlideLayout();
-    syncEpsSlideLayout();
+    syncEpsChartsForExportLayout();
     if (trendChart) trendChart.resize();
     syncRuleSeverityChartForExportLayout();
     syncEpsEventsSlideLayout();
@@ -4330,8 +4456,8 @@ async function exportPptxLegacy() {
 
   const epsSlideEl = document.getElementById("slideEpsTrendPlot");
   if (epsSlideEl) epsSlideEl.scrollIntoView({ block: "center" });
-  syncEpsSlideLayout();
-  await new Promise((r) => setTimeout(r, 150));
+  syncEpsChartsForExportLayout();
+  await new Promise((r) => setTimeout(r, 200));
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
 
   slide = pptx.addSlide();
@@ -4352,8 +4478,8 @@ async function exportPptxLegacy() {
 
   const epsLeftFrame = document.getElementById("epsTrendLeftFrame");
   const epsRightFrame = document.getElementById("epsTrendRightFrame");
-  const epsLeftImg = await captureElToPng(epsLeftFrame, 2);
-  const epsRightImg = await captureElToPng(epsRightFrame, 2);
+  const epsLeftImg = await captureElToPng(epsLeftFrame, EPS_FRAME_CAPTURE_SCALE);
+  const epsRightImg = await captureElToPng(epsRightFrame, EPS_FRAME_CAPTURE_SCALE);
   const epsLeftX = 0.12 * sx;
   const epsLeftY = 0.82 * sy;
   const epsLeftW = 3.9 * sx;
@@ -4369,7 +4495,7 @@ async function exportPptxLegacy() {
     const epsTotalCanvasEl = document.getElementById("epsTotalChart");
     if (epsTotalCanvasEl) {
       slide.addImage({
-        data: getHiResChartDataUrl(epsTotalCanvasEl, epsTotalChart),
+        data: getHiResChartDataUrl(epsTotalCanvasEl, epsTotalChart, EPS_CHART_EXPORT_DPR),
         x: epsLeftX,
         y: epsLeftY,
         w: epsLeftW,
@@ -4400,7 +4526,7 @@ async function exportPptxLegacy() {
     const epsTopCanvasEl = document.getElementById("epsTopHostsChart");
     if (epsTopCanvasEl) {
       slide.addImage({
-        data: getHiResChartDataUrl(epsTopCanvasEl, epsTopHostsChart),
+        data: getHiResChartDataUrl(epsTopCanvasEl, epsTopHostsChart, EPS_CHART_EXPORT_DPR),
         x: epsRightX,
         y: epsRightY,
         w: epsRightW,
@@ -4652,7 +4778,7 @@ async function init() {
       syncEngagementLayout();
       await new Promise((resolve) => setTimeout(resolve, 150));
       syncEngagementLayout();
-      syncAllSlideLayoutsForExport();
+      syncAllSlideLayoutsForExport({ skipRiskVerticalFill: rmzRiskExportSkipVerticalFill });
       window.print();
     } catch (err) {
       console.error("PDF export failed:", err);
