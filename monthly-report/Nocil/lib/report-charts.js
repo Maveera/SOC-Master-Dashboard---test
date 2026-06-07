@@ -7,7 +7,7 @@
   const SEVERITY_CHART_COLORS = {
     high: "#ff0000",
     low: "#00b050",
-    medium: "#ffff00"
+    medium: "#ffd966"
   };
 
   let dataLabelsRegistered = false;
@@ -50,6 +50,17 @@
     };
   }
 
+  function parseTrendDateSortKey(dateStr) {
+    const s = String(dateStr || "").trim();
+    const m = s.match(/^(\d{1,2})[-\/.](\d{1,2})[-\/.](\d{2,4})$/);
+    if (!m) return Number.MAX_SAFE_INTEGER;
+    const day = Number(m[1]);
+    const month = Number(m[2]) - 1;
+    const year = Number(m[3].length === 2 ? `20${m[3]}` : m[3]);
+    const t = new Date(year, month, day).getTime();
+    return Number.isFinite(t) ? t : Number.MAX_SAFE_INTEGER;
+  }
+
   function parseTrendCsvRows(csvText) {
     const lines = String(csvText || "")
       .split(/\r?\n/)
@@ -76,7 +87,8 @@
         medium: Math.max(0, parseFloat(r[iMed]) || 0),
         low: Math.max(0, parseFloat(r[iLow]) || 0)
       }))
-      .filter((r) => r.date && r.high + r.medium + r.low > 0);
+      .filter((r) => r.date && r.high + r.medium + r.low > 0)
+      .sort((a, b) => parseTrendDateSortKey(a.date) - parseTrendDateSortKey(b.date));
   }
 
   function ensureDataLabelsPlugin() {
@@ -91,9 +103,30 @@
 
   function buildSeverityStackedDatasets(rows) {
     return [
-      { label: "High", data: rows.map((r) => r.high), backgroundColor: SEVERITY_CHART_COLORS.high, borderWidth: 0, stack: "s" },
-      { label: "Low", data: rows.map((r) => r.low), backgroundColor: SEVERITY_CHART_COLORS.low, borderWidth: 0, stack: "s" },
-      { label: "Medium", data: rows.map((r) => r.medium), backgroundColor: SEVERITY_CHART_COLORS.medium, borderWidth: 0, stack: "s" }
+      {
+        label: "High",
+        data: rows.map((r) => r.high),
+        backgroundColor: SEVERITY_CHART_COLORS.high,
+        borderColor: SEVERITY_CHART_COLORS.high,
+        borderWidth: 0,
+        stack: "s"
+      },
+      {
+        label: "Low",
+        data: rows.map((r) => r.low),
+        backgroundColor: SEVERITY_CHART_COLORS.low,
+        borderColor: SEVERITY_CHART_COLORS.low,
+        borderWidth: 0,
+        stack: "s"
+      },
+      {
+        label: "Medium",
+        data: rows.map((r) => r.medium),
+        backgroundColor: SEVERITY_CHART_COLORS.medium,
+        borderColor: "#c9a000",
+        borderWidth: 1,
+        stack: "s"
+      }
     ];
   }
 

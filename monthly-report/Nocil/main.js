@@ -1681,6 +1681,47 @@ function renderEpsTrendPlot() {
   }
 }
 
+function getTrendChartTitle() {
+  const custom = getValue("trendChartTitle");
+  if (custom) return custom.replace(/\[MONTH\]/g, getReportMonth());
+  return `Potential Alert Summary - ${getReportMonth()}`;
+}
+
+function getTrendRowsForChart() {
+  return ReportCharts.filterTrendRowsWithIncidentData(parseTrendCsvRows(getValue("trendCsv")));
+}
+
+function syncTrendSlideLayout() {
+  const slide = document.getElementById("slideTrend");
+  const wrap = slide?.querySelector(".trend-canvas-wrap");
+  if (!wrap) return;
+  const rowCount = trendChart?.data?.labels?.length || getTrendRowsForChart().length || 0;
+  wrap.style.minHeight = rowCount > 10 ? "240px" : "180px";
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (!trendChart) return;
+      const cp = rowCount > 12 ? 0.52 : rowCount > 8 ? 0.62 : 0.72;
+      if (!trendChart.options.datasets) trendChart.options.datasets = {};
+      if (!trendChart.options.datasets.bar) trendChart.options.datasets.bar = {};
+      trendChart.options.datasets.bar.categoryPercentage = cp;
+      trendChart.options.datasets.bar.barPercentage = 0.85;
+      const ticks = trendChart.options.scales?.x?.ticks;
+      if (ticks) {
+        ticks.font = {
+          size: rowCount > 12 ? 8 : rowCount > 8 ? 9 : 10,
+          weight: "bold"
+        };
+        ticks.maxRotation = rowCount > 10 ? 60 : 45;
+        ticks.minRotation = rowCount > 10 ? 45 : 0;
+        ticks.autoSkip = false;
+        ticks.maxTicksLimit = rowCount;
+      }
+      trendChart.update("none");
+      trendChart.resize();
+    });
+  });
+}
+
 function ensureTrendDataLabelsPlugin() {
   ReportCharts.ensureDataLabelsPlugin();
   trendDataLabelsRegistered = ReportCharts.isDataLabelsRegistered();
@@ -1689,7 +1730,7 @@ function ensureTrendDataLabelsPlugin() {
 function renderTrendChart() {
   const canvas = document.getElementById("trendChart");
   if (!canvas || typeof Chart === "undefined") return;
-  const rows = parseTrendCsvRows(getValue("trendCsv"));
+  const rows = getTrendRowsForChart();
   if (!rows.length) {
     if (trendChart) {
       trendChart.destroy();
@@ -1701,11 +1742,24 @@ function renderTrendChart() {
   ensureTrendDataLabelsPlugin();
 
   if (trendChart) trendChart.destroy();
-  const plugins = ReportCharts.buildSeverityChartPlugins(`Potential Alert Summary - ${getReportMonth()}`, {
+  const rowCount = rows.length;
+  const categoryPercentage = rowCount > 12 ? 0.52 : rowCount > 8 ? 0.62 : 0.72;
+  const tickFontSize = rowCount > 12 ? 8 : rowCount > 8 ? 9 : 10;
+  const plugins = ReportCharts.buildSeverityChartPlugins(getTrendChartTitle(), {
     legendPosition: "bottom",
     fontSize: 16,
     legendColor: "#000"
   });
+  if (ReportCharts.isDataLabelsRegistered() && plugins.datalabels) {
+    plugins.datalabels = {
+      ...plugins.datalabels,
+      color: "#000000",
+      font: { weight: "bold", size: 10, family: "Calibri, Segoe UI, Arial, sans-serif" },
+      backgroundColor: "rgba(255,255,255,0.92)",
+      borderRadius: 2,
+      padding: { top: 1, bottom: 1, left: 3, right: 3 }
+    };
+  }
 
   trendChart = new Chart(canvas, {
     type: "bar",
@@ -1717,17 +1771,27 @@ function renderTrendChart() {
       animation: false,
       responsive: true,
       maintainAspectRatio: false,
+      datasets: {
+        bar: { categoryPercentage, barPercentage: 0.85 }
+      },
       plugins,
       scales: {
-        x: ReportCharts.buildTrendChartXScaleOptions({ title: "Date", rowCount: rows.length }),
-        y: ReportCharts.buildTrendChartYScaleOptions(rows, { title: "Count" })
+        x: ReportCharts.buildTrendChartXScaleOptions({
+          title: "Date",
+          rowCount,
+          font: { size: tickFontSize, weight: "bold" },
+          maxRotation: rowCount > 10 ? 60 : 45,
+          minRotation: rowCount > 10 ? 45 : 0
+        }),
+        y: ReportCharts.buildTrendChartYScaleOptions(rows, {
+          title: "Count",
+          font: { weight: "bold" }
+        })
       }
     }
   });
 
-  requestAnimationFrame(() => {
-    if (trendChart) trendChart.resize();
-  });
+  syncTrendSlideLayout();
 }
 
 function updateLogos() {
@@ -1859,7 +1923,7 @@ function applyData() {
     requestAnimationFrame(() => {
       syncEngagementLayout();
       if (totPotIncChart) totPotIncChart.resize();
-      if (trendChart) trendChart.resize();
+      syncTrendSlideLayout();
       window.dispatchEvent(new Event("resize"));
     });
   });
