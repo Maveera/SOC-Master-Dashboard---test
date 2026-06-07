@@ -273,7 +273,7 @@ function normalizeKey(text) {
   return String(text || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
 
-const RISK_SLIDE_TITLE = "Potential Alerts - Risks Mitigated";
+const RISK_SLIDE_TITLE = "Potential Incident - Risks Mitigated";
 const RISK_CONTD_TITLE = "Contn.,";
 
 function parseRiskCsvRows(csvText) {
@@ -826,7 +826,7 @@ function renderRuleSeverityChart() {
   const plugins = {
     title: {
       display: true,
-      text: "Potential Alert - Severity Categories",
+      text: "Potential Incident - Severity Categories",
       font: { size: 16, weight: "bold" }
     },
     legend: {
@@ -1684,7 +1684,7 @@ function renderEpsTrendPlot() {
 function getTrendChartTitle() {
   const custom = getValue("trendChartTitle");
   if (custom) return custom.replace(/\[MONTH\]/g, getReportMonth());
-  return `Potential Alert Summary - ${getReportMonth()}`;
+  return `Potential Incident Summary - ${getReportMonth()}`;
 }
 
 function getTrendRowsForChart() {
@@ -2171,9 +2171,9 @@ async function exportPptx() {
   const yAxisMax = Math.max(10, Math.ceil((maxAlert * 1.1) / 5) * 5);
   const yAxisMajorUnit = yAxisMax <= 10 ? 2 : 5;
 
-  // Slide 4: Total Potential Alerts
+  // Slide 4: Total Potential Incident
   slide = pptx.addSlide();
-  slide.addText("Total Potential Alerts", {
+  slide.addText("Total Potential Incident", {
     x: margin,
     y: 0.4 * sy,
     w: contentW,
@@ -2221,9 +2221,9 @@ async function exportPptx() {
     );
   }
 
-  // Slide 5: Potential Alert Tickets Trend
+  // Slide 5: Potential Incident Tickets Trend
   slide = pptx.addSlide();
-  slide.addText("Potential Alert Tickets Trend", {
+  slide.addText("Potential Incident Tickets Trend", {
     x: margin,
     y: 0.4 * sy,
     w: contentW,
@@ -2350,7 +2350,7 @@ async function exportPptx() {
   const ruleRows = parseRuleSeverityCsvRows(getValue("ruleSeverityCsv"));
   if (ruleRows.length) {
     slide = pptx.addSlide();
-    slide.addText("Rule-Based Severity Categories For Potential Alerts", {
+    slide.addText("Rule-Based Severity Categories For Potential Incident", {
       x: margin,
       y: 0.6 * sy,
       w: contentW,

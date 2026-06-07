@@ -74,7 +74,7 @@ This Monthly summary report contains the details of Observations, Findings, Reme
       </div>
 
       <div class="form-slide-block" data-form-slide="tot-pot">
-        <h3 class="form-block-title">Total Potential Alerts</h3>
+        <h3 class="form-block-title">Total Potential Incident</h3>
         <p class="form-block-hint">Manual counts for the bar chart (High / Medium / Low). Empty fields are omitted from the chart.</p>
         <div class="grid-3">
           <label class="totpot-field totpot-field-high">High
@@ -90,7 +90,7 @@ This Monthly summary report contains the details of Observations, Findings, Reme
       </div>
 
       <div class="form-slide-block" data-form-slide="trend">
-        <h3 class="form-block-title">Potential Alert Tickets Trend</h3>
+        <h3 class="form-block-title">Potential Incident Tickets Trend</h3>
         <label>Trend CSV (Date,High,Low,Medium)
           <input id="trendCsvFile" type="file" accept=".csv" />
           <textarea id="trendCsv" style="display:none;"></textarea>
@@ -104,7 +104,7 @@ This Monthly summary report contains the details of Observations, Findings, Reme
       </div>
 
       <div class="form-slide-block" data-form-slide="risks" id="totpot-panel">
-        <h3 class="form-block-title">Potential Alerts - Risks Mitigated</h3>
+        <h3 class="form-block-title">Potential Incident - Risks Mitigated</h3>
         <label>Risk Mitigation Narrative
           <textarea id="riskNarrative" rows="3" placeholder="Rich text supported (**bold**, *italic*)"></textarea>
         </label>
@@ -136,7 +136,7 @@ This Monthly summary report contains the details of Observations, Findings, Reme
       </div>
 
       <div class="form-slide-block" data-form-slide="rule-severity" id="rule-severity-panel">
-        <h3 class="form-block-title">Rule-Based Severity Categories For Potential Alerts</h3>
+        <h3 class="form-block-title">Rule-Based Severity Categories For Potential Incident</h3>
         <label>Rule Severity CSV (Rule, High, Medium, Low)
           <input type="file" id="ruleSeverityCsvFile" accept=".csv" />
           <textarea id="ruleSeverityCsv" style="display:none"></textarea>
@@ -268,14 +268,14 @@ Network Appliances,10</textarea>
               <img class="nav-sns-logo" alt="SNS Logo" />
             </div>
           </div>
-          <h2 class="revision-title revision-title-center totpot-title">Total Potential Alerts</h2>
+          <h2 class="revision-title revision-title-center totpot-title">Total Potential Incident</h2>
           <div class="totpot-chart-box">
             <div class="totpot-banded-block totpot-ss1-frame" id="totPotBandedBlock">
               <div class="totpot-chart-canvas-wrap">
                 <canvas id="totPotIncChart"></canvas>
               </div>
               <div class="totpot-table-legend-wrap">
-                <table class="totpot-data-table" aria-label="Potential alert counts">
+                <table class="totpot-data-table" aria-label="Potential incident counts">
                   <thead>
                     <tr>
                       <th class="totpot-th-empty" scope="col"></th>
@@ -309,7 +309,7 @@ Network Appliances,10</textarea>
               <img class="nav-sns-logo" alt="SNS Logo" />
             </div>
           </div>
-          <h2 class="revision-title revision-title-center trend-title">Potential Alert Tickets Trend</h2>
+          <h2 class="revision-title revision-title-center trend-title">Potential Incident Tickets Trend</h2>
           <div class="slide-body">
             <div class="trend-frame">
               <div class="trend-canvas-wrap">
@@ -330,7 +330,7 @@ Network Appliances,10</textarea>
               <img class="nav-sns-logo" alt="SNS Logo" />
             </div>
           </div>
-          <h2 class="revision-title revision-title-center rule-severity-title">Rule-Based Severity Categories For Potential Alerts</h2>
+          <h2 class="revision-title revision-title-center rule-severity-title">Rule-Based Severity Categories For Potential Incident</h2>
           <div class="rule-severity-chart-wrap">
             <canvas id="ruleSeverityChart"></canvas>
           </div>

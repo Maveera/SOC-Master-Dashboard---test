@@ -843,7 +843,7 @@ body.panel-resizing {
   line-height: 1.2;
 }
 
-/* Potential Alerts - Risks Mitigated: center all table text (every slide incl. Contn.) */
+/* Potential Incident - Risks Mitigated: center all table text (every slide incl. Contn.) */
 #reportRoot .risk-slide .risk-table,
 #reportRoot .risk-slide-compact .risk-table {
   text-align: center;
